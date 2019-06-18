@@ -1,0 +1,42 @@
+# Configure time
+
+# Build time
+arc/
+tmp/
+bin/
+mero_kitab/
+output/
+output*/
+partition/
+viscoelastic/
+EXAMPLES/
+src/*__genmod.f90
+*.mod
+*.o
+
+# documentation
+doc/*.aux
+doc/*.bbl
+doc/*.blg
+doc/*.brf
+doc/*.log
+doc/*.out
+doc/*.synctex.gz
+doc/*.toc
+
+#log files
+*.log
+
+# Trash files
+.*swp
+.*swo
+*~
+submit*
+*.output
+slurm*
+fort.*
+*OLD.*
+
+# until successful testing
+cmake-modules/
+*.cmake
