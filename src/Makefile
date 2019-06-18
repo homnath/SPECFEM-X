@@ -130,13 +130,13 @@ OBJ_PARTMESH = $(BIN)/global.o           \
                $(BIN)/partmesh.o         \
 	             $(EMPTY_MACRO)
 
-OBJ_specfemx =  $(OBJ)               \
+OBJ_specfem-x =  $(OBJ)               \
                 $(OBJ_SEM)           \
 							  $(OBJ_BOTH_SERIAL)   \
 							  $(BIN)/specfem3d.o  \
 							  $(BIN)/specfemx.o    \
 	              $(EMPTY_MACRO)
-OBJ_pspecfemx = $(OBJ)               \
+OBJ_pspecfem-x = $(OBJ)               \
                 $(OBJ_SEMMPI)        \
 								$(OBJ_BOTH_PARALLEL) \
 								$(BIN)/pspecfem3d.o \
@@ -144,25 +144,25 @@ OBJ_pspecfemx = $(OBJ)               \
 	              $(EMPTY_MACRO)
 
 # main executable for spectral-element method
-specfemx = $(BIN)/specfemx
-pspecfemx = $(BIN)/pspecfemx
+specfem-x = $(BIN)/specfem-x
+pspecfem-x = $(BIN)/pspecfem-x
 PARTMESH = $(BIN)/partmesh
 
-default: specfemx pspecfemx
+default: specfem-x pspecfem-x
 
 clean:
 	rm -f *.mod $(BIN)/*.o core src/*.*.swp
 test:
 	echo ${PETSC_FC_INCLUDES}
-all: clean partmesh specfemx pspecfemx
+all: clean partmesh specfem-x pspecfem-x
 
-debug: clean partmesh specfemx pspecfemx 
+debug: clean partmesh specfem-x pspecfem-x 
 
-specfemx: $(OBJ_specfemx)
-	$(FC_COMPILE) -o $(specfemx) $(OBJ_specfemx) $(LIB)
+specfem-x: $(OBJ_specfem-x)
+	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB)
 
-pspecfemx: $(OBJ_pspecfemx)
-	$(FC_COMPILE) -o $(pspecfemx) $(OBJ_pspecfemx) $(LIBMPI) ${PETSC_KSP_LIB}
+pspecfem-x: $(OBJ_pspecfem-x)
+	$(FC_COMPILE) -o $(pspecfem-x) $(OBJ_pspecfem-x) $(LIBMPI) ${PETSC_KSP_LIB}
 
 partmesh: $(OBJ_PARTMESH)
 	$(FC_COMPILE) -o ${PARTMESH} $(OBJ_PARTMESH) $(LIBSCOTCH)
