@@ -1,0 +1,52 @@
+#pre information
+preinfo: nproc=40, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_gravity/', &
+pot_dof=1, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='okubo1992_example2_fine_coord_x', &
+      yfile='okubo1992_example2_fine_coord_y', &
+      zfile='okubo1992_example2_fine_coord_z', &
+      confile='okubo1992_example2_fine_connectivity', &
+      idfile='okubo1992_example2_fine_material_id', &
+      gfile='okubo1992_example2_fine_nsplit_ghost'
+
+#boundary conditions
+bc: uxfile='okubo1992_example2_fine_ssbcux', &
+    uyfile='okubo1992_example2_fine_ssbcuy', &
+    uzfile='okubo1992_example2_fine_ssbcuz', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='okubo1992_example2_fine_add_infinite_surface', &
+      imat_trinf=4, &
+      imat_inf=5, &
+      zmaxinf=1, &
+      infquad='radau', &
+      pole0='user', &
+      coord=5000.0000 0.0000 -6000.0000, &
+      pole_type='point', &
+      rinf=50000.0, &
+      valinf=0
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='nepal_topo_trfile'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=3, faultslipfile_plus='okubo1992_example2_fine_fault_plus', &
+faultslipfile_minus='okubo1992_example2_fine_fault_minus',shalf=1,taper=0
+
+#material list
+material: matfile='okubo1992_example2_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1,gpot=1,agrav=1
+
+#development paramters
+#devel: nondim=0, mgll=1
+devel: nondim=1

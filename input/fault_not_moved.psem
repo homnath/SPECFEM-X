@@ -1,0 +1,24 @@
+#pre information
+preinfo: nproc=4, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path=./input', out_path=./outp./'
+
+#mesh information
+mesh: xfile='fault_not_moved_coord_x', yfile='fault_not_moved_coord_y', zfile='fault_not_moved_coord_z', &
+confile='fault_not_moved_connectivity', idfile='fault_not_moved_material_id', gfile='fault_not_moved_ghost'
+
+#boundary conditions
+bc: uxfile='fault_not_moved_ssbcux', uyfile='fault_not_moved_ssbcuy', uzfile='fault_not_moved_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='fault_not_moved_trfile'
+
+#material list
+material: matfile='fault_not_moved_material_list'
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=50, ntstep=1, dt=50, ninc=1
+
+#save data
+save: disp=1

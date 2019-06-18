@@ -1,0 +1,27 @@
+#pre information
+preinfo: nproc=64, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path='./input', out_path='./output/'
+
+#mesh information
+mesh: xfile='okada_benchmark_coord_x', yfile='okada_benchmark_coord_y', zfile='okada_benchmark_coord_z', &
+confile='okada_benchmark_connectivity', idfile='okada_benchmark_material_id', gfile='okada_benchmark_ghost'
+
+#boundary conditions
+bc: uxfile='okada_benchmark_ssbcux', uyfile='okada_benchmark_ssbcuy', uzfile='okada_benchmark_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='nepal_topo_trfile'
+
+#earthquake slip or CMT file. 0=slip,1=CMT
+eqsource: type=3, faultslipfile='okada_benchmark_fault'
+
+#material list
+material: matfile='okada_benchmark_material_list'
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=10, ntstep=2, dt=50, ninc=1
+
+#save data
+save: disp=1

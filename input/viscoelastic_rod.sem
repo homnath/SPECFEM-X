@@ -1,0 +1,24 @@
+#pre information
+preinfo: method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path='./input', out_path='./outp./'
+
+#mesh information
+mesh: xfile='viscoelastic_rod_coord_x', yfile='viscoelastic_rod_coord_y', zfile='viscoelastic_rod_coord_z', &
+confile='viscoelastic_rod_connectivity', idfile='viscoelastic_rod_material_id'
+
+#boundary conditions
+bc: uxfile='viscoelastic_rod_ssbcux', uyfile='viscoelastic_rod_ssbcuy', uzfile='viscoelastic_rod_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+traction: trfile='viscoelastic_rod_trfile'
+
+#material list
+material: matfile='viscoelastic_rod_material_list'
+
+#control parameters
+control: ksp_tol=1e-12, ksp_maxiter=5000, nl_tol=1e-8, nl_maxiter=500, ntstep=200, dt=100, ninc=1
+
+#save data
+save: disp=1

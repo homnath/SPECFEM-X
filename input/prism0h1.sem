@@ -1,0 +1,24 @@
+#pre information
+preinfo: nproc=1, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='prism0h1_coord_x', yfile='prism0h1_coord_y', zfile='prism0h1_coord_z', &
+confile='prism0h1_connectivity', idfile='prism0h1_material_id'
+
+#boundary conditions
+bc: uxfile='prism0h1_ssbcux', uyfile='prism0h1_ssbcuy', uzfile='prism0h1_ssbcuz', &
+phifile='prism0h1_ssbcphi', infbc=1, add_infmesh=1, &
+infrfile='prism0h1_ssbcphi_addinf', poleinf='origin', multipole=0, &
+rinf=50000.0, valinf=0, matidinf=3
+
+#material list
+material: matfile='prism0h1_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=200000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: gpot=1, agrav=1
+
+devel: nondim=0

@@ -1,0 +1,33 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=4, nglly=4, ngllz=4, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_fault/', &
+pot_dof=0, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='vertical_fault_coord_x', yfile='vertical_fault_coord_y', zfile='vertical_fault_coord_z', &
+confile='vertical_fault_connectivity', idfile='vertical_fault_material_id', gfile='vertical_fault_cmt_inf_ngll4_ghost'
+
+#boundary conditions
+bc: ubc=0, uxfile='vertical_fault_ssbcux', uyfile='vertical_fault_ssbcuy', uzfile='vertical_fault_ssbcuz', &
+infbc=1,add_infmesh=1,infrfile='vertical_fault_add_infinite', &
+matidinf=3,zmaxinf=1,infquad='radau',pole0='user', &
+coord=0.0000 0.0000 -7000.0000,pole_type='point',rinf=80000.0,valinf=0
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=0, slipfile='vertical_fault_slip'
+
+#benchmark
+#benchmark: okada=1
+
+#material list
+material: matfile='vertical_fault_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=1000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

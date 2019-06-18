@@ -1,0 +1,35 @@
+#pre information
+preinfo: nproc=80, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_msphere/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='msphere_bigg_coord_x', yfile='msphere_bigg_coord_y', zfile='msphere_bigg_coord_z', &
+confile='msphere_bigg_connectivity', idfile='msphere_bigg_material_id', gfile='msphere_bigg_n80_ghost'
+
+#boundary conditions
+bc: uxfile='msphere_bigg_ssbcux', &
+    uyfile='msphere_bigg_ssbcuy', &
+    uzfile='msphere_bigg_ssbcuz', &
+    phifile='msphere_bigg_ssbcphi', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='msphere_bigg_infinite_surface', &
+      mat_type='define', &
+      imat_inf=12, &
+      pole0='user', &
+      coord0=103000.0 0.0  -109490.582488133, &
+      pole_type='point', &
+      rinf=200000, &
+      valinf=0, &
+      zmaxinf=1, &
+
+#material list
+material: matfile='msphere_bigg_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-7, ksp_maxiter=20000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: gpot=1, agrav=1, model=1, cell=1
+
+devel: nondim=1, gaminf=1.90

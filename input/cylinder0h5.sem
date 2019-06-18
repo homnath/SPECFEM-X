@@ -1,0 +1,23 @@
+#pre information
+preinfo: nproc=1, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='cylinder0h5_coord_x', yfile='cylinder0h5_coord_y', zfile='cylinder0h5_coord_z', &
+confile='cylinder0h5_connectivity', idfile='cylinder0h5_material_id'
+
+#boundary conditions
+bc: uxfile='cylinder0h5_ssbcux', uyfile='cylinder0h5_ssbcuy', uzfile='cylinder0h5_ssbcuz', &
+infbc=1, add_infmesh=1,infrfile='cylinder0h5_infinite_addinf', &
+rinf=500,pole0='origin',pole_type='axis',pole_axis=2,valinf=0.0, matidinf=3,zmaxinf=1,dyval=0.0
+
+#material list
+material: matfile='cylinder0h5_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=200000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: gpot=1, agrav=1
+
+devel: nondim=0

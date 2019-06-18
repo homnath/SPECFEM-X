@@ -1,0 +1,30 @@
+#pre information
+preinfo: nproc=16, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path='./input', out_path='./output/'
+
+#mesh information
+mesh: xfile='gravity_test_coord_x', yfile='gravity_test_coord_y', zfile='gravity_test_coord_z', &
+confile='gravity_test_connectivity', idfile='gravity_test_material_id', gfile='gravity_test_nsplit_ghost'
+
+#boundary conditions
+bc: uxfile='gravity_test_ssbcux', uyfile='gravity_test_ssbcuy', uzfile='gravity_test_ssbcuz', &
+infbc=1,matidinf=3,zmaxinf=0,infquad='gauss'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='nepal_topo_trfile'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=3, faultslipfile_plus='gravity_test_fault_plus', &
+faultslipfile_minus='gravity_test_fault_minus',sdivide=1
+
+#material list
+material: matfile='gravity_test_material_list'
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=1000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: disp=1
+

@@ -1,0 +1,55 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_gravity/', &
+pot_dof=1, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='inclined_gfault_coord_x', &
+      yfile='inclined_gfault_coord_y', &
+      zfile='inclined_gfault_coord_z', &
+      confile='inclined_gfault_connectivity', &
+      idfile='inclined_gfault_material_id', &
+      gfile='inclined_gfault_cmt_ghost'
+
+#boundary conditions
+bc: ubc=0, &
+    uxfile='inclined_gfault_ssbcux', &
+    uyfile='inclined_gfault_ssbcuy', &
+    uzfile='inclined_gfault_ssbcuz', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='inclined_gfault_add_infinite_surface', &
+      imat_trinf=4, &
+      imat_inf=5, &
+      zmaxinf=0, &
+      infquad='radau', &
+      pole0='user', &
+      coord0=0.0000 0.0000 -7000.0000, &
+      pole_type='point', &
+      rinf=5000000.0, &
+      valinf=0
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='inclined_gfault_free_surface',case='internal'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=0, slipfile='inclined_gfault_slip'
+
+#benchmark
+benchmark: okada=1
+
+#material list
+material: matfile='inclined_gfault_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=20000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1,gpot=1,agrav=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

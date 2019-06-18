@@ -1,0 +1,22 @@
+#pre information
+preinfo: nproc=1, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_sphere/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='sphere0_coord_x', yfile='sphere0_coord_y', zfile='sphere0_coord_z', &
+confile='sphere0_connectivity', idfile='sphere0_material_id'
+
+#boundary conditions
+bc: uxfile='sphere0_ssbcux', uyfile='sphere0_ssbcuy', uzfile='sphere0_ssbcuz', &
+phifile='sphere0_ssbcphi', infbc=1, add_infmesh=1, &
+infrfile='sphere0_infinite_surface', pole0='user', coord=0.0000 0.0000 -6000.0000, pole_type='point', &
+rinf=50000.0, valinf=0, matidinf=3
+
+#material list
+material: matfile='sphere_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-7, ksp_maxiter=200000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: gpot=1, agrav=1

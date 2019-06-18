@@ -1,0 +1,29 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path='./input', out_path='./output_vpylith'
+
+#mesh information
+mesh: xfile='nodesplit_sp1_coord_x', yfile='nodesplit_sp1_coord_y', zfile='nodesplit_sp1_coord_z', &
+confile='nodesplit_sp1_connectivity', idfile='nodesplit_sp1_material_id', gfile='nodesplit_sp1_ghost'
+
+#boundary conditions
+bc: uxfile='nodesplit_sp1_ssbcux', uyfile='nodesplit_sp1_ssbcuy', uzfile='nodesplit_sp1_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='nepal_topo_trfile'
+
+#earthquake slip or CMT file. 0=slip,1=CMT
+#eqsource: type=0, slipfile=sp_uniform_slip
+eqsource: type=3, faultslipfile_plus='nodesplit_sp1_fault_plus', &
+faultslipfile_minus='nodesplit_sp1_fault_minus',shalf=1,taper=1
+
+#material list
+material: matfile='pylith_viscoelastic_material_list'
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=1, ntstep=15, dt=10.0, tunit='year', ninc=1
+
+#save data
+save: disp=1

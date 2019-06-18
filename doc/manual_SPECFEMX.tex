@@ -1,0 +1,83 @@
+%% Do not edit unless you really know what you are doing.
+\documentclass[12pt,a4paper]{report}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{color,geometry,graphicx}
+\usepackage[absolute]{textpos}
+\usepackage{pdfpages}
+\usepackage{float,textcomp,amsmath,paralist,calc}
+\usepackage{natbib}
+\geometry{verbose,a4paper,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\newcommand{\ap}{\textquotesingle}
+\newcommand{\sq}[1]{\textquotesingle{#1}\textquotesingle}
+\setlength\parindent{0pt}
+
+\definecolor{gray}{rgb}{0.8,0.8,0.8}
+
+\newcommand{\frontmatter}{\cleardoublepage
+  \pagenumbering{roman}}
+\newcommand{\mainmatter}{\cleardoublepage
+  \pagenumbering{arabic}}
+\newcommand{\backmatter}{\cleardoublepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+%\renewcommand{\baselinestretch}{1.5}
+
+% hyperlinks to sections and references
+%\usepackage[pdftex,bookmarks=true,bookmarksnumbered=true,pdfpagemode=None,pdfstartview=FitH,pdfpagelayout=SinglePage,pdfborder={0 0 0}]{hyperref}
+\newcommand{\tsup}[1]{\textsuperscript{#1}}
+\newenvironment{desclist}[1]
+{\begin{list}{}
+{\renewcommand\makelabel[1]{{##1}\hfill}
+\settowidth\labelwidth{\makelabel{#1}}
+\setlength\leftmargin{\labelwidth+\labelsep}}}
+{\end{list}}
+
+\newenvironment{adescription}[1]
+{\begin{list}{}
+{\renewcommand\makelabel[1]{\texttt{##1}\hfill}
+\settowidth\labelwidth{\makelabel{#1}}
+\setlength\leftmargin{\labelwidth+\labelsep}}}
+{\end{list}}
+
+% Package name and version
+\def\pack{SPECFEMX}
+\def\packver{\pack\ 1.0 Beta}
+
+\begin{document}
+%\thispagestyle{empty}\textbf{}%
+%\includepdf[fitpaper]{cover}
+%\begin{textblock*}{297mm}(0mm,0mm)
+%   \includegraphics[width=\paperwidth]{cover}
+%\end{textblock*}
+
+%\begin{figure}[H]
+%\centering
+%\noindent\includegraphics[width=0.8\paperwidth]{cover}
+%\noindent\includegraphics[scale=1.0]{cover}
+%\end{figure}
+
+\thispagestyle{empty} % no page number
+\title{\textbf{\packver \\
+User Manual}}
+
+\input{authors.tex}
+\maketitle
+
+\frontmatter
+\input{licensing.tex}
+\input{acknowledgements.tex}
+\tableofcontents
+\clearpage
+
+\mainmatter
+\input{chap1_introduction.tex}
+\input{chap2_getting_started.tex}
+\input{chap3_input.tex}
+\input{chap4_output_and_visualization.tex}
+\input{chap5_utilities.tex}
+
+\bibliographystyle{chicago}
+\bibliography{manual_SPECFEMX}
+
+\end{document}

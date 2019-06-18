@@ -1,0 +1,24 @@
+#pre information
+preinfo: nproc=384, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='msphere_new_coord_x', yfile='msphere_new_coord_y', zfile='msphere_new_coord_z', &
+confile='msphere_new_connectivity', idfile='msphere_new_material_id', gfile='msphere_new_ghost'
+
+#boundary conditions
+bc: uxfile='msphere_new_ssbcux', uyfile='msphere_new_ssbcuy', uzfile='msphere_new_ssbcuz', &
+phifile='msphere_new_ssbcphi', infrfile='msphere_new_infinite_surface', &
+infbc=1, add_infmesh=1,pole0='user', coord=100000.0 0.0  -93388.69898, &
+pole_type='point', rinf=200000, valinf=0, zmaxinf=1, matidinf=12
+
+#material list
+material: matfile='msphere_new_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=20000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: gpot=1, agrav=1
+
+devel: nondim=1

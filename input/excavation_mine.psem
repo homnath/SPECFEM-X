@@ -1,0 +1,24 @@
+#pre information
+preinfo: nproc=96, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output/', disp_dof=0, pot_dof=1
+
+#mesh information
+mesh: xfile='excavation_mine_coord_x', yfile='excavation_mine_coord_y', zfile='excavation_mine_coord_z', &
+confile='excavation_mine_connectivity', idfile='excavation_mine_material_id', gfile='excavation_mine_ghost'
+
+#boundary conditions
+bc: uxfile='excavation_mine_ssbcux', uyfile='excavation_mine_ssbcuy', uzfile='excavation_mine_ssbcuz', &
+phifile='excavation_mine_ssbcphi', infbc=1, add_infmesh=1, &
+infrfile='excavation_mine_infinite_addinf', pole0='user', coord=311.0 311.0 -311.0, pole_type='point', &
+rinf=5000.0, valinf=0, matidinf=7
+
+#material list
+material: matfile='excavation_mine_material_list', density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=3000, nl_tol=0.0005, nl_maxiter=1, ninc=10
+
+#save data
+save: gpot=1, agrav=1
+
+devel: nondim=1, solver='builtin'

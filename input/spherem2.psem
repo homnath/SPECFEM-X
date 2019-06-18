@@ -1,0 +1,39 @@
+#pre information
+preinfo: nproc=40, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_magnetic/', disp_dof=0, pot_dof=1, pot_type='magnetic'
+
+#mesh information
+mesh: xfile='spherem2_coord_x', yfile='spherem2_coord_y', zfile='spherem2_coord_z', &
+confile='spherem2_connectivity', idfile='spherem2_material_id', gfile='spherem2_ghost'
+
+#boundary conditions
+bc: ubc=0, &
+    uxfile='spherem2_ssbcux', &
+    uyfile='spherem2_ssbcuy', &
+    uzfile='spherem2_ssbcuz', &
+    phifile='spherem2_ssbcphi', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='spherem2_infinite_surface', &
+      mat_type='define', &
+      imat_inf=3, &
+      pole0='user', &
+      coord0=0.0000 0.0000 5.0000, &
+      pole_type='point', &
+      rinf=50.0, &
+      valinf=0, &
+
+# magnetic traction
+mtraction: trfile='spherem2_traction_surface'
+
+#material list
+material: matfile='spherem_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-7, ksp_maxiter=20000
+
+#save data
+save: mpot=1, magb=1, inf=1
+
+#devel
+devel: nondim=0

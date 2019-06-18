@@ -1,0 +1,21 @@
+REVISION:
+  HNG, Nov 12,2018
+TODO LIST
+URGENT:
+- add - sign in computing 4\pi G \rho and in computing g overall results won't be affected
+- make sure of sing of forcing terms of magnetic anomalies
+- simulataneous runs are not possible due to write/read of identical files on tmp/ folder
+- properly nondimensionalize okada solution part
+- properly nondimensionalize traction/ubc conditions
+- replace block properties with elemental propertie for viscoelastic region
+NONURGENT
+ - we can unify varible name elmt_finite
+ - Robin boundary condition
+ - need to consider ghost partitions for the averaging nodal quantities
+ - block visualization so that interior part can be clearly visualized
+ - isolate constitutive relation part
+ - restart feature
+ - YAML input format 
+ - Prompt error if the input and/or output and/or partition paths are not found.
+RECENTLY RESOLVED
+- replace conditions controlled by block material properties with point properties 

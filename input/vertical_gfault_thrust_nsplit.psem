@@ -1,0 +1,53 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_gravity/', &
+pot_dof=1, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='vertical_gfault_coord_x', &
+      yfile='vertical_gfault_coord_y', &
+      zfile='vertical_gfault_coord_z', &
+      confile='vertical_gfault_connectivity', &
+      idfile='vertical_gfault_material_id', &
+      gfile='vertical_gfault_thrust_nsplit_ghost'
+
+#boundary conditions
+bc: ubc=0, &
+    uxfile='vertical_gfault_ssbcux', &
+    uyfile='vertical_gfault_ssbcuy', &
+    uzfile='vertical_gfault_ssbcuz', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='vertical_gfault_add_infinite_surface', &
+      imat_trinf=4, &
+      imat_inf=5, &
+      zmaxinf=0, &
+      infquad='radau', &
+      pole0='user', &
+      coord0=0.0000 0.0000 -7000.0000, &
+      pole_type='point', &
+      rinf=5000000.0, &
+      valinf=0
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='vertical_gfault_free_surface',case='internal'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=3, faultslipfile_plus='vertical_gfault_thrust_fault_plus', &
+faultslipfile_minus='vertical_gfault_thrust_fault_minus',shalf=1,taper=0
+
+#material list
+material: matfile='vertical_gfault_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=20000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1,gpot=1,agrav=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

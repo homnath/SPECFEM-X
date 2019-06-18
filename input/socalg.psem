@@ -1,0 +1,54 @@
+#pre information
+preinfo: utm_zone=11, nproc=160, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_socal/', &
+pot_dof=1, disp_dof=1, grav0=0, pot_type='gravity'
+
+#mesh information
+mesh: xfile='socalg_coord_x', &
+      yfile='socalg_coord_y', &
+      zfile='socalg_coord_z', &
+      confile='socalg_connectivity', &
+      idfile='socalg_material_id', &
+      gfile='socalg_ghost'
+
+#boundary conditions
+bc: ubc=0, &
+    uxfile='socalg_ssbcux', &
+    uyfile='socalg_ssbcuy', &
+    uzfile='socalg_ssbcuz', &
+    fsfile='socalg_free_surface', &
+    infbc=1, &
+      add_infmesh=1, &
+      infrfile='socalg_infinite_surface', &
+      mat_type='define', &
+      imat_trinf=3, &
+      imat_inf=4, &
+      zmaxinf=0, &
+      infquad='radau', &
+      pole0='user', &
+      coord0=399448.7500 3823690.0000 -100000.0000, &
+      pole_type='point', &
+      rinf=700000.0, &
+      valinf=0
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='socalg_free_surface',case='internal'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=1, cmtfile='CMTSOLUTION_NorthRidge'
+
+#material list
+material: matfile='socalg_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-8, ksp_maxiter=20000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1,gpot=1,agrav=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

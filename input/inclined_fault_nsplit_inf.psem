@@ -1,0 +1,31 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_fault/', &
+pot_dof=0, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='inclined_fault_coord_x', yfile='inclined_fault_coord_y', zfile='inclined_fault_coord_z', &
+confile='inclined_fault_connectivity', idfile='inclined_fault_material_id', gfile='inclined_fault_nsplit_inf_ghost'
+
+#boundary conditions
+bc: ubc=0, uxfile='inclined_fault_ssbcux', uyfile='inclined_fault_ssbcuy', uzfile='inclined_fault_ssbcuz', &
+infbc=1,add_infmesh=1,infrfile='inclined_fault_add_infinite', &
+matidinf=3,zmaxinf=1,infquad='radau',pole0='user', &
+coord=0.0000 0.0000 -7000.0000,pole_type='point',rinf=80000.0,valinf=0
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=3, faultslipfile_plus='inclined_fault_fault_plus', &
+faultslipfile_minus='inclined_fault_fault_minus',shalf=1
+
+#material list
+material: matfile='inclined_fault_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=1000, nl_tol=1e-4, nl_maxiter=1
+
+#save data
+save: disp=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

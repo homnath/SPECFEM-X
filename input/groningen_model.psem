@@ -1,0 +1,27 @@
+#pre information
+preinfo: nproc=16, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path=./input', out_path=./outp./'
+
+#mesh information
+mesh: xfile='groningen_model_coord_x', yfile='groningen_model_coord_y', zfile='groningen_model_coord_z', &
+confile='groningen_model_connectivity', idfile='groningen_model_material_id', gfile='groningen_model_ghost'
+
+#boundary conditions
+bc: uxfile='groningen_model_ssbcux', uyfile='groningen_model_ssbcuy', uzfile='groningen_model_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='groningen_model_trfile'
+
+#earthquake slip or CMT file. 0=slip,1=CMT
+eqsource: slipfile='med_slip', type=0
+
+#material list
+material: matfile='groningen_model_material_list',allelastic=1
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: model=1, disp=1

@@ -1,0 +1,30 @@
+#pre information
+preinfo: nproc=32, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, &
+inp_path='./input', out_path='./output_fault/', &
+pot_dof=0, disp_dof=1, grav0=0
+
+#mesh information
+mesh: xfile='vertical_fault_viscoelastic_coord_x', yfile='vertical_fault_viscoelastic_coord_y', zfile='vertical_fault_viscoelastic_coord_z', &
+confile='vertical_fault_viscoelastic_connectivity', idfile='vertical_fault_viscoelastic_material_id', gfile='vertical_fault_viscoelastic_cmt_ghost'
+
+#boundary conditions
+bc: ubc=1, uxfile='vertical_fault_viscoelastic_ssbcux', uyfile='vertical_fault_viscoelastic_ssbcuy', uzfile='vertical_fault_viscoelastic_ssbcuz'
+
+#earthquake slip or CMT file. 0 = slip,1 = CMT, 2 = Finite fault, 3 = Slip with split node
+eqsource: type=0, slipfile='vertical_fault_slip'
+
+#benchmark
+#benchmark: okada=1
+
+#material list
+material: matfile='vertical_fault_viscoelastic_material_list',density=1
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=1000, nl_tol=1e-4, nl_maxiter=1, ntstep=5, dt=50, ninc=1
+
+#save data
+save: disp=1
+
+#devel
+#devel: nondim=0, mgll=1
+devel: nondim=1

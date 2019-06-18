@@ -1,0 +1,27 @@
+#pre information
+preinfo: nproc=96, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, ngnode=8, inp_path./input', out_path./out./'
+
+#mesh information
+mesh: xfile='brick_for_cmt_implementation_large_coord_x', yfile='brick_for_cmt_implementation_large_coord_y', zfile='brick_for_cmt_implementation_large_coord_z', &
+confile='brick_for_cmt_implementation_large_connectivity', idfile='brick_for_cmt_implementation_large_material_id', gfile='brick_for_cmt_implementation_large_ghost'
+
+#boundary conditions
+bc: uxfile='brick_for_cmt_implementation_large_ssbcux', uyfile='brick_for_cmt_implementation_large_ssbcuy', uzfile='brick_for_cmt_implementation_large_ssbcuz'
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='brick_for_cmt_implementation_large_trfile'
+
+#earthquake slip or CMT file. 0=slip,1=CMT
+eqsource: slipfile='okada_slip_large', type=0
+
+#material list
+material: matfile='brick_for_cmt_implementation_large_material_list'
+
+#control parameters
+control: ksp_tol=1e-6, ksp_maxiter=2000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: disp=1

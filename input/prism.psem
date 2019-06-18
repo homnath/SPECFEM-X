@@ -1,0 +1,33 @@
+#pre information
+preinfo: nproc=64, method='sem', ngllx=3, nglly=3, ngllz=3, nenode=8, &
+         ngnode=8, inp_path='./input', out_path='./output/',          &
+         pot_dof=1, disp_dof=0
+
+#mesh information
+mesh: xfile='prism_coord_x', yfile='prism_coord_y', zfile='prism_coord_z', &
+confile='prism_connectivity', idfile='prism_material_id', gfile='prism_ghost'
+
+#boundary conditions
+bc: uxfile='prism_ssbcux', uyfile='prism_ssbcuy', uzfile='prism_ssbcuz',  &
+infbc=1,matidinf=3,zmaxinf=1
+
+#initial stress
+#stress0: type=1, z0=10, s0=0
+ 
+#traction
+#traction: trfile='nepal_topo_trfile'
+
+#earthquake slip or CMT file. 0=slip,1=CMT
+#eqsource: type=0, slipfile='okada_slip_tensile'
+
+#material list
+material: matfile='prism_material_list',density=1
+
+#control parameters
+control: ksp_maxiter=5000, nl_tol=1e-4, nl_maxiter=1, ntstep=1, dt=50, ninc=1
+
+#save data
+save: gpot=1,agrav=1
+
+# developement variables
+devel: nondim=0
