@@ -1,4 +1,4 @@
-# Makefile for SPECFEMX
+# Makefile for SPECFEM-X
 # REVISION
 #   HNG, Jan 17,2014
 

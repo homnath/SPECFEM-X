@@ -1,4 +1,4 @@
-# Makefile for SPECFEMX
+# Makefile for SPECFEM-X
 # REVISION
 #   HNG, Jul 12,2011; HNG, Apr 09,2010
 # binary directory
