@@ -284,7 +284,7 @@ matblock: do i_blk=1,nmatblk
       bulkmod_elmt(:,block(i_blk)%elmt)=bulkmod_blk(i_blk)
       shearmod_elmt(:,block(i_blk)%elmt)=shearmod_blk(i_blk)
     endif
-    if(ISDISP_DOF .or. (ISPOT_DOF.and.POT_TYPE==PMAGNETIC))then
+    if(ISDISP_DOF .or. (ISPOT_DOF.and.POT_TYPE==PGRAVITY))then
       massdens_elmt(:,block(i_blk)%elmt)=rho_blk(i_blk)
 
       if(trim(cmodel)=='chakravarthi')then

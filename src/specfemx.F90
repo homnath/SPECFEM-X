@@ -520,7 +520,7 @@ if(allocated(massdens_elmt))then
     flush(logunit)
   endif
   ! Always use positive value for nondimensionalizing
-  maxdensity=abs(maxdensity)
+  maxdensity=max(abs(mindensity),abs(maxdensity))
 endif
 ! minimum, maximum bulk modulus
 ! bulkmod_elmt is not allocated for the magnetic anomaly computation

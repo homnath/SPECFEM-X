@@ -32,7 +32,7 @@ implicit none
 integer,intent(out) :: errcode
 character(len=250),intent(out) :: errtag
 integer :: i,ios
-integer :: i_elmt,ielmt,iface,nelpart,i_elpart
+integer :: i_elmt,ielmt,iface,nelpart,i_elpart,i_fnode,n
 ! local node numbers in each face
 integer,dimension(6,4) :: node_face
 
@@ -111,7 +111,16 @@ do i_elpart=1,nelpart
   read(11,*)ielmt,iface
   imat=mat_id(ielmt)
   iface_elmt(i_elpart)=iface
-  nodelist(n1:n2)=g_num(node_face(iface,:),ielmt)
+  !print*,n1,n2
+  !print*,nodelist(n1:n2)
+  !print*,g_num(node_face(iface,:),ielmt)
+  n=n1
+  do i_fnode=1,4
+    nodelist(n)=g_num(node_face(iface,i_fnode),ielmt)
+    n=n+1
+  enddo
+  !NOTE: following statement does not work with the recent INTEL compilers!!!
+  !nodelist(n1:n2)=g_num(node_face(iface,:),ielmt)
   n1=n2+1; n2=n1+3
   mat_domainINFS(i_elpart)=mat_domain(imat)
   imat_INFS(i_elpart)=imat
