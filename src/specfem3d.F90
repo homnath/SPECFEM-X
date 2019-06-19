@@ -932,8 +932,11 @@ time_step: do i_tstep=1,ntstep
     du(0)=ZERO
     maxdu=maxscal(maxval(abs(du)))
     if(myrank==0)then
-      write(logunit,'(a,i0,1x,a,i0,1x,a,g0.6)')' KSP iters: ',ksp_iter, &
-      'convergence reason: ',ksp_convreason,'max du: ',maxdu
+      write(logunit,'(a,i0,1x,a,g0.6)')' KSP iters: ',ksp_iter, &
+      'max du: ',maxdu
+      if(solver_type.eq.petsc_solver)then
+        write(logunit,'(a,i0)')' convergence reason: ',ksp_convreason
+      endif
       flush(logunit)
     endif
     u=u+du
@@ -981,7 +984,6 @@ time_step: do i_tstep=1,ntstep
         enddo
       enddo
     endif
-
     bodyload=ZERO; !viscoload=ZERO
 
     if(ISDISP_DOF)then

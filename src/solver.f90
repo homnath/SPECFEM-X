@@ -32,6 +32,7 @@ errtag="ERROR: unknown!"
 errcode=-1
 
 !---CG solver
+ksp_iter=0
 
 ! check if RHS is 0
 if(maxval(abs(f)).le.zerotol)then
@@ -105,6 +106,7 @@ errtag="ERROR: unknown!"
 errcode=-1
 
 !---PCG solver
+ksp_iter=0
 
 ! check if RHS is 0
 if(maxval(abs(f)).le.zerotol)then
