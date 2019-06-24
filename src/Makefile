@@ -3,7 +3,7 @@
 #   HNG, Jul 12,2011; HNG, Apr 09,2010
 # binary directory
 BIN = ../bin
-include ${PETSC_DIR}/lib/petsc/conf/variables
+#include ${PETSC_DIR}/lib/petsc/conf/variables
 
 ifeq ($(FORTRAN_COMPILER), INTEL)
 	FC = ifort
@@ -19,6 +19,14 @@ else
 	CC = gcc
 	CFLAGS = -O3
 endif
+
+
+NVCC = nvcc
+GENCODE_60 = -gencode=arch=compute_60,code=\"sm_60,compute_60\"
+NVCC_FLAGS_BASE = $(CUDA_FLAGS) $(CUDA_INC) $(MPI_INCLUDES) $(COND_MPI_CPPFLAGS)
+NVCC_FLAGS = $(NVCC_FLAGS_BASE) -DCUDA $(GENCODE_60) -ftz=true  -L/usr/local/cuda-10.1/lib64
+CUDA_LINK =  -L/usr/local/cuda-10.1/lib64 -lcudart -lstdc++ -lcudadevrt 
+
 ## serial fortran compiler
 ##FC = gfortran
 ##FFLAGS = -g -std=f2003 -fbounds-check -fimplicit-none -O5 -pedantic -pedantic-errors -Wline-truncation -fno-trapping-math -fno-backslash
@@ -48,7 +56,7 @@ LIBMPI = -lmpi #-L/~/openmpi-1.4.3/lib/lmpi # OR path to appropriate MPI library
 LIBSCOTCH = -L${SCOTCH_DIR}/lib -lscotch -lscotcherr
 INCSCOTCH = -I${SCOTCH_DIR}/include
 
-INCPETSC = -I${PETSC_DIR}/include -I${PETSC_DIR}/${PETSC_ARCH}/include
+#INCPETSC = -I${PETSC_DIR}/include -I${PETSC_DIR}/${PETSC_ARCH}/include
 
 # object tree
 OBJ = $(BIN)/global.o            \
@@ -82,6 +90,7 @@ OBJ = $(BIN)/global.o            \
       $(BIN)/plastic_library.o   \
       $(BIN)/postprocess.o       \
       $(BIN)/okada_solution.o    \
+      $(BIN)/GPU.cuda.o          \
 	    $(EMPTY_MACRO)
 
 # object tree for SEM serial
@@ -159,7 +168,7 @@ all: clean partmesh specfem-x pspecfem-x
 debug: clean partmesh specfem-x pspecfem-x 
 
 specfem-x: $(OBJ_specfem-x)
-	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB)
+	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB)  $(CUDA_LINK)
 
 pspecfem-x: $(OBJ_pspecfem-x)
 	$(FC_COMPILE) -o $(pspecfem-x) $(OBJ_pspecfem-x) $(LIBMPI) ${PETSC_KSP_LIB}
@@ -359,4 +368,8 @@ $(BIN)/partmesh_scotch.o: partmesh_scotch.f90 partmesh_library.f90
 
 $(BIN)/partmesh.o: partmesh.f90
 	$(FC_COMPILE) -c -o $(BIN)/partmesh.o partmesh.f90
+
+$(BIN)/%.cuda.o: %.cu GPU.h
+	${NVCC} -c $< -o $@ $(NVCC_FLAGS)
+
 

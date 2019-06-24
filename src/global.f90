@@ -128,6 +128,9 @@ module global
 use set_precision
 use math_constants,only: ONE
 implicit none
+
+integer(kind=8) :: GPU_pointer
+
 ! UTM projection zone (Optional input)
 integer :: UTM_ZONE
 character(len=20) :: proc_str,ptail,ptail_inp

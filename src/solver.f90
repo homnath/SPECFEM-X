@@ -3,7 +3,7 @@
 !   HNG, Jul 12,2011; HNG, Apr 09,2010
 module solver
 use set_precision
-use global, only : g_num,nedof
+use global, only : g_num,nedof, GPU_pointer
 use ksp_constants, only : KSP_MAXITER,KSP_RTOL
 use math_constants, only : zero,zerotol
 
@@ -62,7 +62,7 @@ cg: do ksp_iter=1,KSP_MAXITER
     kp(egdof)=kp(egdof)+matmul(km,p(egdof))
   enddo
   kp(0)=zero
-
+  
   rz=dot_product(r,r)
   alpha=rz/dot_product(p,kp)
   u=u+alpha*p
@@ -98,15 +98,19 @@ character(len=250),intent(out) :: errtag
 
 integer :: i_elmt
 integer,dimension(nedof) :: egdof
-real(kind=kreal) :: alpha,beta,rz
+real(kind=kreal) :: alpha,beta,rz,pkp
 real(kind=kreal),dimension(0:neq) :: kp,p,r,z
 real(kind=kreal),dimension(nedof,nedof) :: km
+
 
 errtag="ERROR: unknown!"
 errcode=-1
 
 !---PCG solver
 ksp_iter=0
+
+call prepare_gpu(GPU_pointer,k,nedof,nelmt)
+
 
 ! check if RHS is 0
 if(maxval(abs(f)).le.zerotol)then
@@ -133,13 +137,23 @@ pcg: do ksp_iter=1,KSP_MAXITER
   kp=zero
   do i_elmt=1,nelmt
     egdof=gdof_elmt(:,i_elmt) !reshape(gdof(:,g_num(:,i_elmt)),(/nedof/))
-    km=k(:,:,i_elmt)
-    kp(egdof)=kp(egdof)+matmul(km,p(egdof))
+ !   km=k(:,:,i_elmt)
+
+ !   kp(egdof)=kp(egdof)+matmul(km,p(egdof))
+    kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
   enddo
   kp(0)=zero
 
-  rz=dot_product(r,z)
-  alpha=rz/dot_product(p,kp)
+  call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)
+
+  !print *,'GPU',rz
+  !rz=0.0 
+  !rz=dot_product(r,z)
+  !print *,'CPU',rz
+  call gpu_dot_product(GPU_pointer,p,kp,neq+1,pkp)
+
+!  alpha=rz/dot_product(p,kp)
+  alpha=rz/pkp
   u=u+alpha*p
 
   if(abs(alpha)*maxval(abs(p))/maxval(abs(u)).le.KSP_RTOL)then
@@ -149,6 +163,7 @@ pcg: do ksp_iter=1,KSP_MAXITER
 
   r=r-alpha*kp
   z=dprecon*r
+
   beta=dot_product(r,z)/rz
   p=z+beta*p
   !write(*,'(i3,f25.18,f25.18,f25.18)')ksp_iter,alpha,beta,rz
