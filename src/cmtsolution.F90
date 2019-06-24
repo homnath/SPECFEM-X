@@ -474,7 +474,7 @@ src:do i_src=1,ncmt_source
   this_src_located=sumscal(isrc_located(i_src))
   iface_all=sumscal(iface) 
   if(this_src_located.lt.1)then
-    write(logunit,'(a,2(g0.6,1x),i0,1x,i0,1x,i0,1x,i0))')'WARNING: cmt source cannot be projected &
+    write(logunit,'(a,2(f0.6,1x),i0,1x,i0,1x,i0,1x,i0))')'WARNING: cmt source cannot be projected &
                                    &on the free surface:',utmx,i_src,myrank,iface_all,this_src_located
     flush(logunit)
   endif

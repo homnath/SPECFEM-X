@@ -475,7 +475,7 @@ do
       elseif(trim(pole0)=='user')then
         pole_coord0=get_real_vect('coord0',NDIM,args,narg)
         if(myrank==0)then
-          write(logunit,'(a,3(1x,g0.6))')' pole_coord0: ',pole_coord0
+          write(logunit,'(a,3(1x,f0.6))')' pole_coord0: ',pole_coord0
           flush(logunit)
         endif
       else
@@ -498,13 +498,13 @@ do
       if(trim(pole_type)=='pointaxis')then
         axis_range=get_real_vect('axis_range',2,args,narg)
         if(axis_range(1).gt.axis_range(2))then
-          write(errtag,'(a,1x,g0.6,1x,g0.6)')'ERROR: axis_range must be in the ascending order!',axis_range
+          write(errtag,'(a,1x,f0.6,1x,f0.6)')'ERROR: axis_range must be in the ascending order!',axis_range
           return
         endif
         pole_coord1=get_real_vect('coord1',NDIM,args,narg)
         if(myrank==0)then
-          write(logunit,'(a,3(1x,g0.6))')' pole_coord1: ',pole_coord1
-          write(logunit,'(a,2(1x,g0.6))')' axis_range: ',axis_range
+          write(logunit,'(a,3(1x,f0.6))')' pole_coord1: ',pole_coord1
+          write(logunit,'(a,2(1x,f0.6))')' axis_range: ',axis_range
           flush(logunit)
         endif
       endif
@@ -949,7 +949,7 @@ do
       return
     endif
     if(myrank==0)then
-      write(logunit,'(a,g0.6)')' relaxation time factor: ',devel_rtfac
+      write(logunit,'(a,f0.6)')' relaxation time factor: ',devel_rtfac
       flush(logunit)
     endif
 

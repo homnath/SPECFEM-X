@@ -416,7 +416,7 @@ bc: do ! ibc=1,nbc
       stop
     endif
     if(ispart(i_part))then
-      write(17,'(i0,1x,g0.6)')bctype,bcval
+      write(17,'(i0,1x,f0.6)')bctype,bcval
       if(bctype==0)then ! point
 
       elseif(bctype==1)then ! edge
@@ -680,7 +680,7 @@ bc: do ! ibc=1,nbc
       stop
     endif
     if(ispart(i_part))then
-      write(17,'(i0,1x,g0.6)')bctype,bcval
+      write(17,'(i0,1x,f0.6)')bctype,bcval
       if(bctype==0)then ! point
 
       elseif(bctype==1)then ! edge
@@ -850,17 +850,17 @@ do i_part=1,npart
   if(ispart(i_part))then
     write(17,'(i0)')tractype
     if(tractype==0)then
-      if(.not.ismagnet)write(17,'(3(g0.6,1x))')q0
+      if(.not.ismagnet)write(17,'(3(f0.6,1x))')q0
     elseif(tractype==1)then
       if(ismagnet)then
-        write(17,'(g0.6,1x,i0,1x,g0.6,1x,g0.6)')M0,incORlat,rval,dec
+        write(17,'(f0.6,1x,i0,1x,f0.6,1x,f0.6)')M0,incORlat,rval,dec
       else
-        write(17,'(3(g0.6,1x))')q0
+        write(17,'(3(f0.6,1x))')q0
       endif
     elseif(tractype==2)then
-      write(17,'(i1,1x,2(g0.6,1x),6(g0.6,1x))')iaxis,x1,x2,q0,q1
+      write(17,'(i1,1x,2(f0.6,1x),6(f0.6,1x))')iaxis,x1,x2,q0,q1
     elseif(tractype==6)then ! disc load
-      write(17,'(5(g0.6,1x))')rho,t0,alpha,hmax,thetamax
+      write(17,'(5(f0.6,1x))')rho,t0,alpha,hmax,thetamax
     endif
     write(17,'(i0)')mpart_nelmt(i_part)
     allocate(temp_mat(2,mpart_nelmt(i_part)))

@@ -236,7 +236,7 @@ enddo
 min_relaxtime=minscal(minval(relaxtime))
 max_relaxtime=maxscal(maxval(relaxtime))
 if(myrank.eq.0)then
-  write(logunit,'(a,g0.6,1x,a,g0.6)')'Relax time => min: ',min_relaxtime,' max: ',max_relaxtime
+  write(logunit,'(a,f0.6,1x,a,f0.6)')'Relax time => min: ',min_relaxtime,' max: ',max_relaxtime
   write(logunit,'(a)')'Time unit: '//trim(tunit)
   flush(logunit)
 endif
@@ -546,7 +546,7 @@ call assemble_ghosts_nodal_iscalar(node_valency,node_valency)
 ! open summary file
 if(myrank==0)then
   write(logunit,'(a)')'KSP_MAXITER, KSP_TOL, NL_MAXITER, NL_TOL'
-  write(logunit,'(i0,1x,g0.6,1x,i0,1x,g0.6)')KSP_MAXITER,KSP_RTOL,NL_MAXITER,NL_TOL
+  write(logunit,'(i0,1x,f0.6,1x,i0,1x,f0.6)')KSP_MAXITER,KSP_RTOL,NL_MAXITER,NL_TOL
   !write(logunit,'(a)')'Number of SRFs'
   !write(logunit,'(i0)')nsrf
   write(logunit,'(a,i0)')'Number of time steps:',ntstep
@@ -666,7 +666,7 @@ time_step: do i_tstep=1,ntstep
   !extload=ZERO
   rhoload=ZERO
   if(myrank==0)then
-    write(logunit,'(a,i0,a,g0.6)')'step: ',i_tstep,' t: ',t
+    write(logunit,'(a,i0,a,f0.6)')'step: ',i_tstep,' t: ',t
     flush(logunit)
   endif
 
@@ -890,7 +890,7 @@ time_step: do i_tstep=1,ntstep
     resload(0)=ZERO
     maxres=maxscal(maxval(abs(resload)))
     if(myrank==0)then
-      write(logunit,'(a,i0,1x,g0.6,1x,g0.6)')' Residual NL: ',i_nliter, &
+      write(logunit,'(a,i0,1x,f0.6,1x,f0.6)')' Residual NL: ',i_nliter, &
       maxres,maxval(abs(bodyload))
       flush(logunit)
     endif
@@ -932,7 +932,7 @@ time_step: do i_tstep=1,ntstep
     du(0)=ZERO
     maxdu=maxscal(maxval(abs(du)))
     if(myrank==0)then
-      write(logunit,'(a,i0,1x,a,g0.6)')' KSP iters: ',ksp_iter, &
+      write(logunit,'(a,i0,1x,a,f0.6)')' KSP iters: ',ksp_iter, &
       'max du: ',maxdu
       if(solver_type.eq.petsc_solver)then
         write(logunit,'(a,i0)')' convergence reason: ',ksp_convreason
@@ -952,7 +952,7 @@ time_step: do i_tstep=1,ntstep
     nl_isconv=uerr.le.NL_TOL
     if(i_nliter>1.and.maxscal(maxval(abs(resload))).le.ZEROtol)nl_isconv=.true.
     if(myrank==0)then
-      write(logunit,'(a,g0.6,1x,a,g0.6)')' UErr:',maxdu/maxu,'maxu:',maxu
+      write(logunit,'(a,f0.6,1x,a,f0.6)')' UErr:',maxdu/maxu,'maxu:',maxu
       flush(logunit)
     endif
 

@@ -291,7 +291,7 @@ matblock: do i_blk=1,nmatblk
         ! make sure that the block for gradient anomaly must be assigen block ID 1 
         if(i_blk==1)then
           if(myrank==0)then
-            write(logunit,'(a,g0.6,1x,g0.6,1x,g0.6)')'gradient density model: \rho0, \alpha, z0:',&
+            write(logunit,'(a,f0.6,1x,f0.6,1x,f0.6)')'gradient density model: \rho0, \alpha, z0:',&
             cmodel_drho0,cmodel_alpha,cmodel_zref
             flush(logunit)
           endif
@@ -306,7 +306,7 @@ matblock: do i_blk=1,nmatblk
               depthp=cmodel_zref-zp ! positive down
               fac=cmodel_drho0-cmodel_alpha*depthp
               if(fac.eq.ZERO)then
-                write(errtag,'(a,g0.6,a)')'ERROR: gradient density model is &
+                write(errtag,'(a,f0.6,a)')'ERROR: gradient density model is &
                 &singular at depth ',zp,' !'
                 return
               endif

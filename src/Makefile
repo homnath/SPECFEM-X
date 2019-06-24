@@ -7,16 +7,17 @@ include ${PETSC_DIR}/lib/petsc/conf/variables
 
 ifeq ($(FORTRAN_COMPILER), INTEL)
 	FC = ifort
-	MPIFC = mpiifort #mpif90
-	FFLAGS = -std08 -O3 -axAVX -xHost -mcmodel medium -shared-intel -check all -check bounds -check pointers -check stack -check uninit -fp-stack-check -traceback -ftz -funroll-loops -unroll5 -align sequence -qopt-report0 -qopt-report-phase=vec -implicitnone -warn truncated_source -warn unused -warn declarations -warn alignments -warn ignore_loc -warn interface -warn usage -heap-arrays
+	MPIFC = ifort #mpif90
+	FFLAGS = -std08 -O3 -axAVX -xHost -mcmodel medium -shared-intel -ftz -funroll-loops -unroll5 -align sequence 
+#	FFLAGS = -std08 -O3 -axAVX -xHost -mcmodel medium -shared-intel -check all -check bounds -check pointers -check stack -check uninit -fp-stack-check -traceback -ftz -funroll-loops -unroll5 -align sequence -qopt-report0 -qopt-report-phase=vec -implicitnone -warn truncated_source -warn unused -warn declarations -warn alignments -warn ignore_loc -warn interface -warn usage -heap-arrays
 
 	CC = icc
 	CFLAGS = -O3 -axAVX -vec-report0 -xHost
 else
-	FC = gfortran
+	FC = pgfortran
 	MPIFC = mpif90
-	FFLAGS = -std=f2008 -O3 -mcmodel=medium -fimplicit-none -frange-check -fbounds-check -fmax-errors=10 -Waliasing -Wampersand -Wcharacter-truncation -Wline-truncation -Wsurprising -Wno-tabs -Wunderflow -Warray-temporaries -Wimplicit-interface -fbacktrace -fdump-core -Wunused-parameter
-	CC = gcc
+	FFLAGS = -O3 -mcmodel=medium -Mbackslash
+	CC = pgcc
 	CFLAGS = -O3
 endif
 ## serial fortran compiler

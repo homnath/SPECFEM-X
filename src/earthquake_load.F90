@@ -306,12 +306,12 @@ if(eqsource_type==0)then
 
   if(myrank==0)then
     write(logunit,*)'------------------------------------------------------------'
-    write(logunit,'(a,3(g0.6,1x))')'fault center :',DIM_L*fault_center
-    write(logunit,'(a,3(g0.6,1x))')'fault strike :',fault_strike
-    write(logunit,'(a,3(g0.6,1x))')'fault normal :',fault_normal
-    write(logunit,'(a,3(g0.6,1x))')'fault slip   :',DIM_L*fault_slip
-    write(logunit,'(a,g0.6)')'fault length :',DIM_L*fault_length
-    write(logunit,'(a,g0.6)')'fault width  :',DIM_L*fault_width
+    write(logunit,'(a,3(f0.6,1x))')'fault center :',DIM_L*fault_center
+    write(logunit,'(a,3(f0.6,1x))')'fault strike :',fault_strike
+    write(logunit,'(a,3(f0.6,1x))')'fault normal :',fault_normal
+    write(logunit,'(a,3(f0.6,1x))')'fault slip   :',DIM_L*fault_slip
+    write(logunit,'(a,f0.6)')'fault length :',DIM_L*fault_length
+    write(logunit,'(a,f0.6)')'fault width  :',DIM_L*fault_width
     write(logunit,'(a,i0)')'npatch length:',npatch_length
     write(logunit,'(a,i0)')'npatch width :',npatch_width
     write(logunit,*)'------------------------------------------------------------'
@@ -1331,7 +1331,7 @@ source: do i_src=1,nsource
   n_felmt=sumscal(n_felmt)
   if(n_felmt.lt.1)then
     if(myrank==0)then
-      write(logunit,'(a,3(g0.6,1x))')'WARNING: source cannot be located: ',i_src,DIM_L*source_x
+      write(logunit,'(a,3(f0.6,1x))')'WARNING: source cannot be located: ',i_src,DIM_L*source_x
       flush(logunit)
     endif
     cycle source
@@ -1346,15 +1346,15 @@ source: do i_src=1,nsource
   if(myrank==0)then
     if(gminerr.gt.DIM_L*maxsize_elmt)then
       write(logunit,'(a)')'WARNING: this source location may be inaccurate!'
-      write(logunit,'(3(g0.6,1x))')xip
-      write(logunit,'(2(g0.6,1x))')gminerr,maxsize_elmt
+      write(logunit,'(3(f0.6,1x))')xip
+      write(logunit,'(2(f0.6,1x))')gminerr,maxsize_elmt
       flush(logunit)
     endif
   endif
 
   ! Determine the processor this source belongs to.
   all_minerr=allgather_scal(minerr)
-  !if(myrank==0)write(*,'(g0)')all_minerr
+  !if(myrank==0)write(*,'(f0)')all_minerr
   indmin=minloc(all_minerr,2)
   ! NOTE: minloc gives the position starting from 1
   src_inrank=indmin(1)-1
@@ -1497,7 +1497,7 @@ if(myrank==0)then
 endif
 if(total_src_located.gt.0)then
   if(myrank==0)then
-    write(logunit,'(a,g0.6,a,g0.6)')'source location errors (m) => min: ', &
+    write(logunit,'(a,f0.6,a,f0.6)')'source location errors (m) => min: ', &
     gminerr_src, ' max: ',gmaxerr_src
     flush(logunit)
   endif

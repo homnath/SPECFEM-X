@@ -252,10 +252,10 @@ station: do i_rec=1,nstation
         if(errxd.gt.maxerr)maxerr=errxd 
         if(errxd.lt.minerr)minerr=errxd 
       endif
-      !write(*,'(a,i0,1x,g0.6)')'station location => niter and error (m): ',niter,errxd
+      !write(*,'(a,i0,1x,f0.6)')'station location => niter and error (m): ',niter,errxd
       if(errxd.gt.maxsize_elmt)then
         write(logunit,'(a)')'WARNING: this station location may be inaccurate!'
-        write(logunit,'(3(g0.6,1x))')xip
+        write(logunit,'(3(f0.6,1x))')xip
         flush(logunit)
       endif
       
@@ -290,7 +290,7 @@ station: do i_rec=1,nstation
   !  endif
   !endif
   if(this_rec_located.lt.1)then
-    write(logunit,'(a,3(g0.6,1x))')'WARNING: station cannot be located: ',recx
+    write(logunit,'(a,3(f0.6,1x))')'WARNING: station cannot be located: ',recx
     flush(logunit)
   endif
 
@@ -311,7 +311,7 @@ if(total_rec_located.gt.0)then
   maxerrg=maxscal(maxerr)
   minerrg=minscal(minerr)
   if(myrank==0)then
-    write(logunit,'(a,g0.6,a,g0.6)')'station location errors (m) => min: ', &
+    write(logunit,'(a,f0.6,a,f0.6)')'station location errors (m) => min: ', &
     minerrg, ' max: ',maxerrg
     flush(logunit)
   endif
@@ -498,10 +498,10 @@ station: do i_rec=1,nstation
         if(errxd.gt.maxerr)maxerr=errxd 
         if(errxd.lt.minerr)minerr=errxd 
       endif
-      !write(*,'(a,i0,1x,g0.6)')'station location => niter and error (m): ',niter,errxd
+      !write(*,'(a,i0,1x,f0.6)')'station location => niter and error (m): ',niter,errxd
       if(errxd.gt.maxsize_elmt)then
         write(logunit,'(a)')'WARNING: this station location may be inaccurate!'
-        write(logunit,'(3(g0.6,1x))')xip
+        write(logunit,'(3(f0.6,1x))')xip
         flush(logunit)
       endif
 
@@ -551,7 +551,7 @@ station: do i_rec=1,nstation
   !  endif
   !endif
   if(this_rec_located.lt.1)then
-    write(logunit,'(a,3(g0.6,1x))')'WARNING: station cannot be located: ',recx
+    write(logunit,'(a,3(f0.6,1x))')'WARNING: station cannot be located: ',recx
     flush(logunit)
   endif
 enddo station ! i_rec
@@ -568,7 +568,7 @@ if(total_rec_located.gt.0)then
   maxerrg=maxscal(maxerr)
   minerrg=minscal(minerr)
   if(myrank==0)then
-    write(logunit,'(a,g0.6,a,g0.6)')'station location errors (m) => min: ', &
+    write(logunit,'(a,f0.6,a,f0.6)')'station location errors (m) => min: ', &
     minerrg, ' max: ',maxerrg
     flush(logunit)
   endif

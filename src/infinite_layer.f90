@@ -263,7 +263,7 @@ if(trim(matinf_type).eq.'inherit')then
     else
       rho_or_gam=gam_blk(i_mat)
     endif
-    write(17,'(i0,a,i0,a,i0,a,g0.6,a,es14.6,5(a,g0.6))')i_mat,', ', &
+    write(17,'(i0,a,i0,a,i0,a,f0.6,a,es14.6,5(a,f0.6))')i_mat,', ', &
     mat_domain(i_mat),', ',type_blk(i_mat),', ',rho_or_gam,', ', &
     ym_blk(i_mat),', ',nu_blk(i_mat),', ',phi_blk(i_mat),', ', &
     coh_blk(i_mat),', ',psi_blk(i_mat)
@@ -275,7 +275,7 @@ if(trim(matinf_type).eq.'inherit')then
     write(17,'(a)')trim(visco_rheology)
     do i_mat=1,nmatblk_viscoelas
       imat=imatve_to_imat(i_mat)
-      write(17,'(i0,a,g0.6,a,es14.6)')imat,', ', &
+      write(17,'(i0,a,f0.6,a,es14.6)')imat,', ', &
       muratio_blk(:,i_mat),', ',viscosity_blk(:,i_mat)
     enddo
   endif
@@ -291,7 +291,7 @@ if(trim(matinf_type).eq.'inherit')then
     write(17,'(a)')'magnetization:'
     do i_mat=1,nmatblk_magnet
       imat=imatmag_to_imat(i_mat)
-      write(17,'(i0,a,g0.6,a,es14.6)')imat,', ', &
+      write(17,'(i0,a,f0.6,a,es14.6)')imat,', ', &
       muratio_blk(:,i_mat),', ',viscosity_blk(:,i_mat)
     enddo
   endif
@@ -859,7 +859,7 @@ if(istat/=0) then
   print*,'ERROR: cannot open file:',trim(inffile)
   stop
 endif
-write(17,'(i0,1x,g0.4)')200,0.0
+write(17,'(i0,1x,f0.4)')200,0.0
 write(17,'(i0)')nface_inf
 write(17,format_ef)elmt_face_pair(:,1:nface_inf)
 close(17)

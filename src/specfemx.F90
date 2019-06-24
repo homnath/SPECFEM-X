@@ -211,11 +211,11 @@ if(infbc)then
     'max: ',max_nelmt,'min: ',min_nelmt
     write(logunit,'(a,i0,1x,a,i0,1x,a,i0)')' nodes    => total: ',tot_nnode, &
     'max: ',max_nnode,'min: ',min_nnode
-    write(logunit,'(a,g0.6,1x,g0.6)')' x extent min max: ',model_minx,model_maxx
-    write(logunit,'(a,g0.6,1x,g0.6)')' y extent min max: ',model_miny,model_maxy
-    write(logunit,'(a,g0.6,1x,g0.6)')' z extent min max: ',model_minz,model_maxz
-    write(logunit,'(a,g0.6,1x,g0.6)')' min/max coord: ',mincoord,maxcoord
-    write(logunit,'(a,g0.6)')' abs max coord: ',absmaxcoord
+    write(logunit,'(a,f0.6,1x,f0.6)')' x extent min max: ',model_minx,model_maxx
+    write(logunit,'(a,f0.6,1x,f0.6)')' y extent min max: ',model_miny,model_maxy
+    write(logunit,'(a,f0.6,1x,f0.6)')' z extent min max: ',model_minz,model_maxz
+    write(logunit,'(a,f0.6,1x,f0.6)')' min/max coord: ',mincoord,maxcoord
+    write(logunit,'(a,f0.6)')' abs max coord: ',absmaxcoord
     flush(logunit)
   endif
 else
@@ -247,11 +247,11 @@ if(myrank==0)then
   'max: ',max_nelmt,'min: ',min_nelmt
   write(logunit,'(a,i0,1x,a,i0,1x,a,i0)')' nodes    => total: ',tot_nnode, &
   'max: ',max_nnode,'min: ',min_nnode
-  write(logunit,'(a,g0.6,1x,g0.6)')' x extent min max: ',model_minx,model_maxx
-  write(logunit,'(a,g0.6,1x,g0.6)')' y extent min max: ',model_miny,model_maxy
-  write(logunit,'(a,g0.6,1x,g0.6)')' z extent min max: ',model_minz,model_maxz
-  write(logunit,'(a,g0.6,1x,g0.6)')' min/max coord: ',mincoord,maxcoord
-  write(logunit,'(a,g0.6)')' abs max coord: ',absmaxcoord
+  write(logunit,'(a,f0.6,1x,f0.6)')' x extent min max: ',model_minx,model_maxx
+  write(logunit,'(a,f0.6,1x,f0.6)')' y extent min max: ',model_miny,model_maxy
+  write(logunit,'(a,f0.6,1x,f0.6)')' z extent min max: ',model_minz,model_maxz
+  write(logunit,'(a,f0.6,1x,f0.6)')' min/max coord: ',mincoord,maxcoord
+  write(logunit,'(a,f0.6)')' abs max coord: ',absmaxcoord
   flush(logunit)
 endif
 
@@ -516,7 +516,7 @@ if(allocated(massdens_elmt))then
     maxdensity=maxscal(maxval(massdens_elmt))
   endif
   if(myrank==0)then
-    write(logunit,'(a,g0.6,1x,g0.6)')'min, max density (kg/m3): ',mindensity,maxdensity
+    write(logunit,'(a,f0.6,1x,f0.6)')'min, max density (kg/m3): ',mindensity,maxdensity
     flush(logunit)
   endif
   ! Always use positive value for nondimensionalizing
@@ -533,7 +533,7 @@ if(allocated(bulkmod_elmt))then
     maxbulkmod=maxscal(maxval(bulkmod_elmt))
   endif
   if(myrank==0)then
-    write(logunit,'(a,g0.6,1x,g0.6)')'min, max bulkmod (N/m2): ',minbulkmod,maxbulkmod
+    write(logunit,'(a,f0.6,1x,f0.6)')'min, max bulkmod (N/m2): ',minbulkmod,maxbulkmod
     flush(logunit)
   endif
 endif
@@ -548,7 +548,7 @@ if(allocated(shearmod_elmt))then
     maxshearmod=maxscal(maxval(shearmod_elmt))
   endif
   if(myrank==0)then
-    write(logunit,'(a,g0.6,1x,g0.6)')'min, max shearmod (N/m2): ',minshearmod,maxshearmod
+    write(logunit,'(a,f0.6,1x,f0.6)')'min, max shearmod (N/m2): ',minshearmod,maxshearmod
     flush(logunit)
   endif
 endif
@@ -1044,7 +1044,7 @@ enddo
 maxsize_elmt=maxscal(maxsize)
 sqmaxsize_elmt=maxsize_elmt*maxsize_elmt
 if(myrank==0)then
-  write(logunit,'(a,g0.6)')'maximum element size across the diagonal: ', &
+  write(logunit,'(a,f0.6)')'maximum element size across the diagonal: ', &
   maxsize_elmt*DIM_L
   flush(logunit)
 endif
