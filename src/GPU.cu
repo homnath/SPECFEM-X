@@ -43,9 +43,13 @@ void FC_FUNC_(gpu_dot_product,
   cudaMalloc((void**) &d_product,sizeof(realw));
   cudaMemset(d_product,0,sizeof(realw));
 
-  int nthreads =128;
-  int nblocks = ceil(*size/nthreads ) + 1;
-  plus_reduce<<<nblocks,nthreads>>>(d_v1,d_v2,*size,d_product); 
+  cublasHandle_t cublas_handle = NULL;
+  cublasCreate(&cublas_handle);
+  cublasDdot_v2(cublas_handle, *size, d_v1, 1, d_v2, 1, d_product);
+  cublasDestroy(cublas_handle);
+  // int nthreads =128;
+  // int nblocks = ceil(*size/nthreads ) + 1;
+  // plus_reduce<<<nblocks,nthreads>>>(d_v1,d_v2,*size,d_product); 
   cudaMemcpy(product,d_product,sizeof(realw),cudaMemcpyDeviceToHost);
 
    cudaFree(d_v1);
