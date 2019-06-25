@@ -62,12 +62,28 @@ void FC_FUNC_(gpu_dot_product,
 
 __global__ void get_p_loc_vector(int *gdof_elmt,realw *p,realw * p_loc){
 int tid =threadIdx.x;
-p_loc[tid] = p[gdof_elmt[tid]];
+int ivec = blockIdx.x;
+int nedof = blockDim.x;
+
+p_loc[ivec * nedof + tid] = p[gdof_elmt[ivec * nedof + tid]];
 }
 
 __global__ void assemble_kp_vector(int *gdof_elmt,realw *kp,realw * kp_loc){
 int tid =threadIdx.x;
-kp[gdof_elmt[tid]] += kp_loc[tid];
+int ivec = blockIdx.x;
+int nedof = blockDim.x;
+
+//kp[gdof_elmt[tid]] += kp_loc[tid];
+atomicAdd(&kp[gdof_elmt[ivec * nedof + tid]],kp_loc[ivec * nedof + tid]);
+
+}
+
+__global__ void set_vec_zero(realw *kp, int N) {
+  // 
+  int index = threadIdx.x + blockIdx.x * blockDim.x; 
+  if (index < N ){
+    kp[index] = 0.0;
+  }
 }
 
 
@@ -81,25 +97,36 @@ void FC_FUNC_(compute_matvec_prod,
 
   cudaMemcpy(mp->p,h_p,sizeof(realw)*(mp->neq+1),cudaMemcpyHostToDevice);
 
+  int N = mp->nelmt ;
+
+
+
+
 
   realw * p_loc, * kp_loc;
-  cudaMalloc((void**)&p_loc,(mp->nedof)*sizeof(realw));
-  cudaMalloc((void**)&kp_loc,(mp->nedof)*sizeof(realw));
-  cudaMemset(&mp->kp,0,(mp->neq + 1)*sizeof(realw));
-   cublasHandle_t cublas_handle=NULL;
-   cublasCreate(&cublas_handle);
+  cudaMalloc((void**)&p_loc,N*(mp->nedof)*sizeof(realw));
+  cudaMalloc((void**)&kp_loc,N*(mp->nedof)*sizeof(realw));
+  //cudaMemset(&mp->kp,0,(mp->neq + 1)*sizeof(realw));
+  int nthreads = 256;
+  int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
+  set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
 
-  for (int ielm = 0 ; ielm < mp->nelmt ; ielm++){
+  cublasHandle_t cublas_handle=NULL;
+  cublasCreate(&cublas_handle);
+
+  for (int ielm = 0 ; ielm < mp->nelmt ; ielm+=N){
  
+   printf("in loop %d\n",ielm);
+
    int nthreads = mp->nedof;
-   int nblock = 1;
+   int nblock = N;
 
    //get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->p,p_loc);
    const double beta = 0.0;
    const double alpha = 1.0; 
    
    int &m = mp->nedof;
-   int n = 1;
+   int &n = N;
    int &k = mp->nedof;
    int &lda = m;
    int &ldb = k;
@@ -144,7 +171,12 @@ void FC_FUNC_(prepare_gpu,
   cudaMemcpy(mp->gdof_elmt,h_gdof_elmt,sizeof(int)*(*nelmt)*(*nedof),cudaMemcpyHostToDevice);
 
   cudaMalloc((void**) &mp->kp,(*neq + 1)*sizeof(realw));
-  cudaMemset(&mp->kp,0,(*neq + 1)*sizeof(realw));
+
+  int nthreads = 256;
+  int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
+  set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
+
+
 
   cudaMalloc((void**) &mp->u,(*neq + 1)*sizeof(realw));
   cudaMemcpy(mp->u,u,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
