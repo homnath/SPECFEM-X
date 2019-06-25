@@ -1,0 +1,14 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH -t 0:39:00
+#SBATCH --ntasks-per-node=1
+#SBATCH --gres=gpu:1
+
+
+#cd $SBATCH_O_WORKDIR 
+#cd /scratch/gpfs/etienneb/specfem2d/
+
+ ./bin/specfem-x input/sphere00.sem >>output.log
+
+
+
