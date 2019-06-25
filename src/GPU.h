@@ -33,13 +33,13 @@ int * gdof_elmt ;
 realw* kp;
 realw * u;
 realw * f;
-realw* dprecond; 
+realw* dprecon; 
 realw* r;
 realw * p;
 
 
 // Scalar values
-realw * KSP_tol;
+realw * KSP_rtol;
 realw * pkp;
 realw * beta;
 realw * rz;

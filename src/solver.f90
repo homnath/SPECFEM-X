@@ -131,7 +131,7 @@ z=dprecon*r
 
 p=z
 
-call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecond,u,r,p,KSP_TOL)
+call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,KSP_RTOL)
 
 
 !----pcg iteration----
