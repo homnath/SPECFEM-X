@@ -11,6 +11,7 @@ int i =blockIdx.x*blockDim.x +threadIdx.x;
 __shared__ realw x[128];
 
 
+//x[tid]=v1[i]*v2[i];
 x[tid]=(i<N)?v1[i]:0.0;
 x[tid]*=(i<N)?v2[i]:0.0;
 
