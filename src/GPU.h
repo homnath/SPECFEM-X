@@ -24,7 +24,25 @@ typedef double realw;
 
 typedef struct mesh_ {
 
+int nelmt;
+int neq;
+int nedof;
+
 realw * K;
+int * gdof_elmt ;  
+realw* kp;
+realw * u;
+realw * f;
+realw* dprecond; 
+realw* r;
+realw * p;
+
+
+// Scalar values
+realw * KSP_tol;
+realw * pkp;
+realw * beta;
+realw * rz;
 
 } Mesh;
 

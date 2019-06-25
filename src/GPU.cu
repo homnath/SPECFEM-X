@@ -55,13 +55,48 @@ void FC_FUNC_(gpu_dot_product,
 
 extern "C"
 void FC_FUNC_(prepare_gpu,
-              PREPARE_GPU)(long* gpu_pointer, realw * h_K, int * NGLL3, int * size){
+              PREPARE_GPU)(long* gpu_pointer, realw * h_K, int * nedof, int * nelmt, int * h_gdof_elmt, int * neq,realw * f, realw* dprecond, realw* u, realw * r, realw * p,
+                           realw * KSP_tol){
 
   Mesh* mp = (Mesh*) malloc( sizeof(Mesh) );
   *gpu_pointer = (long)mp;
 
-  cudaMalloc((void**) &mp->K,(*NGLL3)*(*NGLL3)*(*size)*sizeof(realw));
-  cudaMemcpy(mp->K,h_K,sizeof(realw)*(*size)*(*NGLL3)*(*NGLL3),cudaMemcpyHostToDevice);
+  mp->nelmt = *nelmt ;
+  mp->neq = *neq ;
+  mp->nedof = *nedof;
 
+  cudaMalloc((void**) &mp->K,(*nedof)*(*nedof)*(*nelmt)*sizeof(realw));
+  cudaMemcpy(mp->K,h_K,sizeof(realw)*(*nelmt)*(*nedof)*(*nedof),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->gdof_elmt,(*nedof)*(*nelmt)*sizeof(int));
+  cudaMemcpy(mp->gdof_elmt,h_gdof_elmt,sizeof(int)*(*nelmt)*(*nedof),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->kp,(*neq + 1)*sizeof(realw));
+  cudaMemset(&mp->kp,0,(*neq + 1)*sizeof(realw));
+
+  cudaMalloc((void**) &mp->u,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->u,u,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->f,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->f,f,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->dprecond,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->dprecond,dprecond,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->r,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->r,r,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->p,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->p,p,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->kp,(*neq + 1)*sizeof(realw));
+  cudaMalloc((void**) &mp->pkp,sizeof(realw));
+
+  cudaMalloc((void**) &mp->KSP_tol,sizeof(realw));
+  cudaMemcpy(mp->KSP_tol,KSP_tol,sizeof(realw),cudaMemcpyHostToDevice);
+
+  cudaMalloc((void**) &mp->rz,sizeof(realw));
+  cudaMalloc((void**) &mp->beta,sizeof(realw));
+  cudaMalloc((void**) &mp->pkp,sizeof(realw));
 
 }

@@ -109,8 +109,6 @@ errcode=-1
 !---PCG solver
 ksp_iter=0
 
-call prepare_gpu(GPU_pointer,k,nedof,nelmt)
-
 
 ! check if RHS is 0
 if(maxval(abs(f)).le.zerotol)then
@@ -132,6 +130,10 @@ r=f-kp
 z=dprecon*r
 
 p=z
+
+call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecond,u,r,p,KSP_TOL)
+
+
 !----pcg iteration----
 pcg: do ksp_iter=1,KSP_MAXITER
   kp=zero
