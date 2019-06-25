@@ -99,9 +99,9 @@ character(len=250),intent(out) :: errtag
 integer :: i_elmt
 integer,dimension(nedof) :: egdof
 real(kind=kreal) :: alpha,beta,rz,pkp
-real(kind=kreal),dimension(0:neq) :: kp,p,r,z
+real(kind=kreal),dimension(0:neq) :: kp,p,r,z,p2,kp2
 real(kind=kreal),dimension(nedof,nedof) :: km
-
+real :: t1,t2
 
 errtag="ERROR: unknown!"
 errcode=-1
@@ -131,19 +131,42 @@ z=dprecon*r
 
 p=z
 
+call cpu_time(t1)
+
 call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,KSP_RTOL)
 
+call cpu_time(t2)
+
+print*, "Elapsed time for GPU init : ", t2 - t1
 
 !----pcg iteration----
 pcg: do ksp_iter=1,KSP_MAXITER
   kp=zero
+
+  p = 1
+
   do i_elmt=1,nelmt
     egdof=gdof_elmt(:,i_elmt) !reshape(gdof(:,g_num(:,i_elmt)),(/nedof/))
- !   km=k(:,:,i_elmt)
+  ! km=k(:,:,i_elmt)
 
- !   kp(egdof)=kp(egdof)+matmul(km,p(egdof))
+ !  kp(egdof)=kp(egdof)+matmul(km,p(egdof))
     kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
   enddo
+  
+
+  call compute_matvec_prod(GPU_pointer,p,kp2) 
+
+  if (ksp_iter  < 2000) then
+
+  print*, maxval(kp - kp2), ksp_iter
+  print*, maxval(kp), ksp_iter
+  print*, maxval(kp2), ksp_iter
+  print*,""
+  endif
+
+
+  print*, ""
+  print*, ""
   kp(0)=zero
 
   call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)

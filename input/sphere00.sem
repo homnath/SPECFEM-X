@@ -37,7 +37,7 @@ material: matfile='sphere_material_list',density=1
 
 #control parameters
 control: ksp_tol=1e-7, &
-         ksp_maxiter=200000, &
+         ksp_maxiter=500, &
          nl_tol=1e-4, &
          nl_maxiter=1, &
          ntstep=1, &

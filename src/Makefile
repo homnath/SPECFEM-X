@@ -5,6 +5,8 @@
 BIN = ../bin
 #include ${PETSC_DIR}/lib/petsc/conf/variables
 
+FORTRAN_COMPILER = INTEL
+
 ifeq ($(FORTRAN_COMPILER), INTEL)
 	FC = ifort
 	MPIFC = mpiifort #mpif90
@@ -25,7 +27,7 @@ NVCC = nvcc
 GENCODE_60 = -gencode=arch=compute_60,code=\"sm_60,compute_60\"
 NVCC_FLAGS_BASE = $(CUDA_FLAGS) $(CUDA_INC) $(MPI_INCLUDES) $(COND_MPI_CPPFLAGS)
 NVCC_FLAGS = $(NVCC_FLAGS_BASE) -DCUDA $(GENCODE_60) -ftz=true  -L/usr/local/cuda-10.1/lib64
-CUDA_LINK =  -L/usr/local/cuda-10.1/lib64 -lcudart -lstdc++ -lcudadevrt 
+CUDA_LINK =  -L/usr/local/cuda-10.1/lib64 -lcudart -lstdc++ -lcudadevrt -lcublas
 
 ## serial fortran compiler
 ##FC = gfortran

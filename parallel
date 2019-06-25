@@ -8,6 +8,7 @@
 #cd $SBATCH_O_WORKDIR 
 #cd /scratch/gpfs/etienneb/specfem2d/
 
+rm output.log
  ./bin/specfem-x input/sphere00.sem >>output.log
 
 

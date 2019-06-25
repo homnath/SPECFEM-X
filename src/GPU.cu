@@ -29,6 +29,8 @@ if(tid ==0)atomicAdd(total,x[tid]);
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 extern "C"
 void FC_FUNC_(gpu_dot_product,
@@ -57,6 +59,72 @@ void FC_FUNC_(gpu_dot_product,
    cudaFree(d_v2);
 }
 
+
+__global__ void get_p_loc_vector(int *gdof_elmt,realw *p,realw * p_loc){
+int tid =threadIdx.x;
+p_loc[tid] = p[gdof_elmt[tid]];
+}
+
+__global__ void assemble_kp_vector(int *gdof_elmt,realw *kp,realw * kp_loc){
+int tid =threadIdx.x;
+kp[gdof_elmt[tid]] += kp_loc[tid];
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+extern "C"
+void FC_FUNC_(compute_matvec_prod,
+              COMPUTE_MATVEC_PROD)(long* gpu_pointer, realw * h_p, realw * h_kp){
+
+  Mesh* mp = (Mesh*)(*gpu_pointer); //get mesh pointer out of fortran integer container
+
+  cudaMemcpy(mp->p,h_p,sizeof(realw)*(mp->neq+1),cudaMemcpyHostToDevice);
+
+
+  realw * p_loc, * kp_loc;
+  cudaMalloc((void**)&p_loc,(mp->nedof)*sizeof(realw));
+  cudaMalloc((void**)&kp_loc,(mp->nedof)*sizeof(realw));
+  cudaMemset(&mp->kp,0,(mp->neq + 1)*sizeof(realw));
+   cublasHandle_t cublas_handle=NULL;
+   cublasCreate(&cublas_handle);
+
+  for (int ielm = 0 ; ielm < mp->nelmt ; ielm++){
+ 
+   int nthreads = mp->nedof;
+   int nblock = 1;
+
+   //get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->p,p_loc);
+   const double beta = 0.0;
+   const double alpha = 1.0; 
+   
+   int &m = mp->nedof;
+   int n = 1;
+   int &k = mp->nedof;
+   int &lda = m;
+   int &ldb = k;
+   int &ldc = m;
+   realw * A = mp->K + ielm * mp->nedof * mp->nedof;
+   double * &B = p_loc;
+   double * &C = kp_loc;
+
+   get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->p, B);
+   cudaDeviceSynchronize();
+   cublasDgemm_v2(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, B, ldb, &beta, C, ldc);
+   cudaDeviceSynchronize();
+   assemble_kp_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->kp, C);
+
+   }
+
+   printf("finished loop\n");
+
+   cublasDestroy(cublas_handle);
+   cudaFree(p_loc);
+   cudaFree(kp_loc);
+
+   cudaMemcpy(h_kp,mp->kp,sizeof(realw)*(mp->neq+1),cudaMemcpyDeviceToHost);
+
+}
 
 extern "C"
 void FC_FUNC_(prepare_gpu,
