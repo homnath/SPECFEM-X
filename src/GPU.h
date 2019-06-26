@@ -30,10 +30,10 @@ int nedof;
 
 realw * K;
 int * gdof_elmt ;  
-realw* kp;
+realw * kp;
 realw * u;
 realw * f;
-realw* dprecon; 
+realw * dprecon; 
 realw* r;
 realw * p;
 
