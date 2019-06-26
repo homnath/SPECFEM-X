@@ -101,7 +101,7 @@ integer,dimension(nedof) :: egdof
 real(kind=kreal) :: alpha,beta,rz,rznew,pkp
 real(kind=kreal),dimension(0:neq) :: kp,p,r,z,p2,kp2
 real(kind=kreal),dimension(nedof,nedof) :: km
-real :: t1,t2
+real :: t1,t2,t3,t4
 
 errtag="ERROR: unknown!"
 errcode=-1
@@ -152,9 +152,11 @@ pcg: do ksp_iter=1,KSP_MAXITER
  !  kp(egdof)=kp(egdof)+matmul(km,p(egdof))
  !   kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
 !  enddo
-
+call cpu_time(t3)
   call compute_matvec_prod(GPU_pointer,p,kp) 
+call cpu_time(t4)
 
+print*, 'timing loop ;', t4 - t3
   kp(0)=zero
 
   call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)

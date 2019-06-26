@@ -1,6 +1,4 @@
 #include "GPU.h"
-
-
 __global__ void plus_reduce(realw *v1,realw*v2,int N,realw *total){
 
 int tid =threadIdx.x;
@@ -146,25 +144,26 @@ __global__ void set_vec_zero(realw *kp, int N) {
 extern "C"
 void FC_FUNC_(compute_matvec_prod,
               COMPUTE_MATVEC_PROD)(long* gpu_pointer, realw * h_p, realw * h_kp){
-
+//  cudaEvent_t start,stop;
+//  start_timing_cuda(&start,&stop);
   Mesh* mp = (Mesh*)(*gpu_pointer); //get mesh pointer out of fortran integer container
 
+   // Cuda timing
   cudaMemcpy(mp->p,h_p,sizeof(realw)*(mp->neq+1),cudaMemcpyHostToDevice);
-
+//  float time;
+//  stop_timing_cuda(&start,&stop,"first memcpy",&time);
+//  start_timing_cuda(&start,&stop);
   int N = mp->nelmt ;
 
-  realw * p_loc, * kp_loc;
-  cudaMalloc((void**)&p_loc,N*(mp->nedof)*sizeof(realw));
-  cudaMalloc((void**)&kp_loc,N*(mp->nedof)*sizeof(realw));
-  //cudaMemset(&mp->kp,0,(mp->neq + 1)*sizeof(realw));
+//  stop_timing_cuda(&start,&stop,"malloc",&time);
+//  start_timing_cuda(&start,&stop);
+  cudaMemset(mp->kp,0,(mp->neq + 1)*sizeof(realw));
   int nthreads = 256;
   int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
-  set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
-
-  cublasHandle_t cublas_handle=NULL;
-  cublasCreate(&cublas_handle);
-
-
+ // set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
+///  stop_timing_cuda(&start,&stop,"after memset",&time);
+  // Cuda timing
+//  start_timing_cuda(&start,&stop);
    nthreads = mp->nedof;
   int nblock = N;
 
@@ -173,28 +172,36 @@ void FC_FUNC_(compute_matvec_prod,
   const double alpha = 1.0; 
   
   int &m = mp->nedof;
-  int &n = N;
+  int n = 1;
   int &k = mp->nedof;
   int &lda = m;
   int &ldb = k;
   int &ldc = m;
   realw * A = mp->K;
-  double * &B = p_loc;
-  double * &C = kp_loc;
+  double * &B = mp->p_loc;
+  double * &C = mp->kp_loc;
+//  stop_timing_cuda(&start,&stop,"in between",&time);
+  // Cuda timing
+//  start_timing_cuda(&start,&stop);
 
+  
   get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->p, B);
-  cublasDgemmStridedBatched(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
-  cudaDeviceSynchronize();
+//  stop_timing_cuda(&start,&stop,"p_loc",&time);
+// start_timing_cuda(&start,&stop);
+
+  cublasDgemmStridedBatched(mp->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
+
+//  stop_timing_cuda(&start,&stop,"cublas",&time);
+// start_timing_cuda(&start,&stop);
+
   assemble_kp_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->kp, C);
 
-
-   printf("finished loop\n");
-
-   cublasDestroy(cublas_handle);
-   cudaFree(p_loc);
-   cudaFree(kp_loc);
+//  stop_timing_cuda(&start,&stop,"assemble",&time);
+//  start_timing_cuda(&start,&stop);
+   //printf("finished loop\n");
 
    cudaMemcpy(h_kp,mp->kp,sizeof(realw)*(mp->neq+1),cudaMemcpyDeviceToHost);
+//  stop_timing_cuda(&start,&stop,"memcpy",&time);
 
 }
 
@@ -209,6 +216,9 @@ void FC_FUNC_(prepare_gpu,
   mp->neq = *neq ;
   mp->nedof = *nedof;
 
+
+  cublasCreate(&mp->cublas_handle);
+
   cudaMalloc((void**) &mp->K,(*nedof)*(*nedof)*(*nelmt)*sizeof(realw));
   cudaMemcpy(mp->K,h_K,sizeof(realw)*(*nelmt)*(*nedof)*(*nedof),cudaMemcpyHostToDevice);
 
@@ -220,8 +230,6 @@ void FC_FUNC_(prepare_gpu,
   int nthreads = 256;
   int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
   set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
-
-
 
   cudaMalloc((void**) &mp->u,(*neq + 1)*sizeof(realw));
   cudaMemcpy(mp->u,u,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
@@ -240,6 +248,9 @@ void FC_FUNC_(prepare_gpu,
 
   cudaMalloc((void**) &mp->kp,(*neq + 1)*sizeof(realw));
   cudaMalloc((void**) &mp->pkp,sizeof(realw));
+
+  cudaMalloc((void**) &mp->p_loc,(*nedof*(*nelmt))*sizeof(realw));
+  cudaMalloc((void**) &mp->kp_loc,(*nedof*(*nelmt))*sizeof(realw));
 
   cudaMalloc((void**) &mp->KSP_rtol,sizeof(realw));
   cudaMemcpy(mp->KSP_rtol,KSP_rtol,sizeof(realw),cudaMemcpyHostToDevice);
