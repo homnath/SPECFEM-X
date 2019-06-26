@@ -120,7 +120,7 @@ endif
 kp=zero
 if(maxval(abs(u)).gt.zero)then
   do i_elmt=1,nelmt
-    egdof=gdof_elmt(:,i_elmt) !reshape(gdof(:,g_num(:,i_elmt)),(/nedof/))
+    egdof=gdof_elmt(:,i_elmt)
     km=k(:,:,i_elmt)
     kp(egdof)=kp(egdof)+matmul(km,u(egdof))
   enddo
