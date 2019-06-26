@@ -98,7 +98,7 @@ character(len=250),intent(out) :: errtag
 
 integer :: i_elmt
 integer,dimension(nedof) :: egdof
-real(kind=kreal) :: alpha,beta,rz,pkp
+real(kind=kreal) :: alpha,beta,rz,rznew,pkp
 real(kind=kreal),dimension(0:neq) :: kp,p,r,z,p2,kp2
 real(kind=kreal),dimension(nedof,nedof) :: km
 real :: t1,t2
@@ -181,13 +181,13 @@ pcg: do ksp_iter=1,KSP_MAXITER
   r=r-alpha*kp
   z=dprecon*r
 
-  beta=dot_product(r,z)/rz
+  call gpu_dot_product(GPU_pointer,r,z,neq+1,rznew)
+  !beta=dot_product(r,z)/rz
+  beta=rznew/rz
   p=z+beta*p
   !write(*,'(i3,f25.18,f25.18,f25.18)')ksp_iter,alpha,beta,rz
 
 enddo pcg
-
-
 
 write(errtag,'(a)')'ERROR: PCG solver doesn''t converge!'
 return
