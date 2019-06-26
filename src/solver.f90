@@ -170,10 +170,10 @@ print*, 'timing loop ;', t4 - t3
   ! alpha=rz/dot_product(p,kp)
   alpha=rz/pkp
 
-   u = u+alpha*p
+  ! u = u+alpha*p
   ! Vector operation:  u = u + alpha*p,
   ! where u and p are vectors and alpha is scalar 
-  ! call gpu_daxpy_1(GPU_pointer, u, p, alpha, neq+1) 
+  call gpu_daxpy_1(GPU_pointer, u, p, alpha, neq+1) 
 
   if(abs(alpha)*maxval(abs(p))/maxval(abs(u)).le.KSP_RTOL)then
     errcode=0
