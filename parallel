@@ -4,9 +4,9 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 
-cd /tigress/hgharti/gitwork/SPECFEM-X
-source ~/.login19
+cd /scratch/gpfs/etienneb/SPECFEM-X 
 
+#nvprof  --profile-child-processes 
 ./bin/specfem-x input/sphere00.sem
 
 
