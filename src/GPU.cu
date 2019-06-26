@@ -1,4 +1,59 @@
 #include "GPU.h"
+
+
+__inline__ __device__ realw warpReduceMax(realw v) {
+
+ for (int offset = warpSize/2; offset > 0; offset /= 2) 
+    v = max(v,__shfl_xor(v, offset));
+  return v;
+}
+
+__inline__ __device__ realw blockReduceMax(realw val) {
+
+  static __shared__ realw shared[32]; // Shared mem for 32 partial sums
+  int lane = threadIdx.x % warpSize;
+  int wid = threadIdx.x / warpSize;
+
+  val = warpReduceMax(val);     // Each warp performs partial reduction
+
+  if (lane==0) shared[wid]=val; // Write reduced value to shared memory
+
+  __syncthreads();              // Wait for all partial reductions
+
+  //read from shared memory only if that warp existed
+  val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
+
+  if (wid==0) val = warpReduceMax(val); //Final reduce within first warp
+
+  return val;
+}
+
+__global__ void deviceReducemaxKernel(realw *in, realw* out, int N) {
+  realw sum = 0.0;
+  //reduce multiple elements per thread
+  for (int i = blockIdx.x * blockDim.x + threadIdx.x; 
+       i < N; 
+       i += blockDim.x * gridDim.x) {
+    if (abs(in[i]) > sum) sum = abs(in[i]);
+  }
+  sum = blockReduceMax(sum);
+  if (threadIdx.x==0)  out[blockIdx.x]=sum;
+
+}
+
+void deviceReduceMax(realw *in, realw* out, int N) {
+  int threads = 512;
+  int blocks = min((N + threads - 1) / threads, 1024);
+  realw * max_temp;
+  cudaMalloc((void**) &max_temp,sizeof(realw)*blocks);
+
+  deviceReducemaxKernel<<<blocks, threads>>>(in, max_temp, N);
+  deviceReducemaxKernel<<<1, 1024>>>(max_temp, max_temp, blocks);
+  cudaMemcpy(out,max_temp,sizeof(realw),cudaMemcpyDeviceToHost);
+  cudaFree(max_temp);
+}
+
+
 __global__ void plus_reduce(realw *v1,realw*v2,int N,realw *total){
 
 int tid =threadIdx.x;
@@ -126,14 +181,6 @@ atomicAdd(&kp[gdof_elmt[ivec * nedof + tid]],kp_loc[ivec * nedof + tid]);
 
 }
 
-__global__ void set_vec_zero(realw *kp, int N) {
-  // 
-  int index = threadIdx.x + blockIdx.x * blockDim.x; 
-  if (index < N ){
-    kp[index] = 0.0;
-  }
-}
-
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -195,8 +242,13 @@ void FC_FUNC_(compute_matvec_prod,
 //  stop_timing_cuda(&start,&stop,"assemble",&time);
 //  start_timing_cuda(&start,&stop);
    //printf("finished loop\n");
+realw max_temp;
+deviceReduceMax( mp->kp, &max_temp, mp->neq + 1); 
+  cudaMemcpy(h_kp,mp->kp,sizeof(realw)*(mp->neq+1),cudaMemcpyDeviceToHost);
 
-   cudaMemcpy(h_kp,mp->kp,sizeof(realw)*(mp->neq+1),cudaMemcpyDeviceToHost);
+
+printf("max from kernel : %lf\n",max_temp);
+
 //  stop_timing_cuda(&start,&stop,"memcpy",&time);
 
 }
@@ -225,7 +277,8 @@ void FC_FUNC_(prepare_gpu,
 
   int nthreads = 256;
   int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
-  set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
+  cudaMemset(mp->kp,0,(mp->neq + 1)*sizeof(realw));
+
 
   cudaMalloc((void**) &mp->u,(*neq + 1)*sizeof(realw));
   cudaMemcpy(mp->u,u,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
