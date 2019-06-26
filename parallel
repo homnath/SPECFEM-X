@@ -1,15 +1,13 @@
 #!/bin/bash
 #SBATCH --nodes=1
-#SBATCH -t 0:39:00
+#SBATCH -t 0:10:00
 #SBATCH --ntasks-per-node=1
 #SBATCH --gres=gpu:1
 
+cd /tigress/hgharti/gitwork/SPECFEM-X
+source ~/.login19
 
-#cd $SBATCH_O_WORKDIR 
-#cd /scratch/gpfs/etienneb/specfem2d/
-
-rm output.log
- ./bin/specfem-x input/sphere00.sem >>output.log
+./bin/specfem-x input/sphere00.sem
 
 
 

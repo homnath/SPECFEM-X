@@ -99,10 +99,6 @@ void FC_FUNC_(compute_matvec_prod,
 
   int N = mp->nelmt ;
 
-
-
-
-
   realw * p_loc, * kp_loc;
   cudaMalloc((void**)&p_loc,N*(mp->nedof)*sizeof(realw));
   cudaMalloc((void**)&kp_loc,N*(mp->nedof)*sizeof(realw));
