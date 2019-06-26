@@ -29,13 +29,13 @@ if(tid ==0)atomicAdd(total,x[tid]);
 
 
 // daxpy like routines
-__global__ void vecadd(realw *v1, realw *v2, realw *c, int N) {
+__global__ void vecadd(realw *v1, realw *v2, realw c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec1 + c * vec2
     if (index < N) v1[index] = v1[index] + c * v2[index];
 }
 
-__global__ void vecsub(realw *v1, realw *v2, realw *c, int N) {
+__global__ void vecsub(realw *v1, realw *v2, realw c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec1 - c * vec2
     if (index < N) v1[index] = v1[index] - c * v2[index];
@@ -44,10 +44,10 @@ __global__ void vecsub(realw *v1, realw *v2, realw *c, int N) {
 __global__ void vecmult(realw *v1, realw *v2, realw *v3, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec2  * vec3
-    if (index < N) v1[index] = v1[index] + c * v2[index];
+    if (index < N) v3[index] = v1[index] + v2[index];
 }
 
-__global__ void vecadd2(realw *v1, realw *v2, realw *c, int N) {
+__global__ void vecadd2(realw *v1, realw *v2, realw c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = c * vec1 + vec2
     if (index < N) v1[index] = c * v1[index] + v2[index] ;
@@ -98,12 +98,12 @@ void FC_FUNC_(gpu_daxpy_1,
   cudaMalloc((void**) &d_v2, *size*sizeof(realw));
   cudaMemcpy(d_v2,v2,sizeof(realw)*(*size),cudaMemcpyHostToDevice);
   realw * d_scalar;
-  cudaMalloc((void**) &d_c, sizeof(realw));
+  cudaMalloc((void**) &d_scalar, sizeof(realw));
   cudaMemcpy(d_scalar,scalar,sizeof(realw),cudaMemcpyHostToDevice);
 
   int nthreads =128;
   int nblocks = ceil(*size/nthreads ) + 1;
-  vecadd<<<nblocks,nthreads>>>(d_v1,d_v2,d_scalar,*size,d_product); 
+  vecadd<<<nblocks,nthreads>>>(d_v1,d_v2, *d_scalar, *size); 
   cudaMemcpy(v1,d_v1,sizeof(realw),cudaMemcpyDeviceToHost);
 
    cudaFree(d_v1);
