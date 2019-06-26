@@ -155,7 +155,6 @@ pcg: do ksp_iter=1,KSP_MAXITER
 call cpu_time(t3)
   call compute_matvec_prod(GPU_pointer,p,kp) 
 call cpu_time(t4)
-
 print*, 'timing loop ;', t4 - t3
   kp(0)=zero
 
