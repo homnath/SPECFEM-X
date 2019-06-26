@@ -99,10 +99,6 @@ void FC_FUNC_(compute_matvec_prod,
 
   int N = mp->nelmt ;
 
-
-
-
-
   realw * p_loc, * kp_loc;
   cudaMalloc((void**)&p_loc,N*(mp->nedof)*sizeof(realw));
   cudaMalloc((void**)&kp_loc,N*(mp->nedof)*sizeof(realw));
@@ -114,11 +110,9 @@ void FC_FUNC_(compute_matvec_prod,
   cublasHandle_t cublas_handle=NULL;
   cublasCreate(&cublas_handle);
 
- 
-   printf("in loop %d\n",ielm);
 
-   int nthreads = mp->nedof;
-   int nblock = N;
+   nthreads = mp->nedof;
+  int nblock = N;
 
   //get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->p,p_loc);
   const double beta = 0.0;
@@ -135,8 +129,7 @@ void FC_FUNC_(compute_matvec_prod,
   double * &C = kp_loc;
 
   get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->p, B);
-  cudaDeviceSynchronize();
-  cublasDgemm_v2(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof);
+  cublasDgemmStridedBatched(cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
   cudaDeviceSynchronize();
   assemble_kp_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->kp, C);
 
