@@ -159,6 +159,8 @@ real(kind=kreal) :: min_relaxtime,max_relaxtime
 real(kind=kreal) :: t
 !factor for time unit conversion
 real(kind=kreal) :: tunitfac
+real(kind=kreal) :: cpu_tstart,cpu_tend,telap,max_telap,mean_telap
+character(len=20) :: format_str
 
 integer :: i_maxwell
 integer,allocatable :: eid_elas(:),eid_viscoelas(:)
@@ -895,6 +897,8 @@ time_step: do i_tstep=1,ntstep
       flush(logunit)
     endif
 
+    ! starting timer
+    call cpu_time(cpu_tstart)
     if(solver_type.eq.builtin_solver)then
       ! builtin solver
       if(solver_diagscale)then
@@ -926,6 +930,15 @@ time_step: do i_tstep=1,ntstep
         write(logunit,'(a)')' petsc_solve: SUCCESS!'
         flush(logunit)
       endif
+    endif
+    call cpu_time(cpu_tend)
+    telap=cpu_tend-cpu_tstart
+    if(myrank==0)then
+      write(format_str,*)ceiling(log10(real(telap)+1.))+5 ! 1 . and 4 decimals
+      format_str='(a,1x,f'//trim(adjustl(format_str))//'.4)'
+      write(logunit,fmt=format_str)'Solver Elapsed Time:',telap
+      write(logunit,'(a)')'--------------------------------------------'
+      flush(logunit)
     endif
 
     ksp_tot=ksp_tot+ksp_iter
