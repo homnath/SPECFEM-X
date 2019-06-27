@@ -3,7 +3,7 @@
 !   HNG, Jul 12,2011; HNG, Apr 09,2010
 module solver
 use set_precision
-use global, only : g_num,nedof, GPU_pointer
+use global, only : g_num,nedof, GPU_pointer, myrank, NPROC
 use ksp_constants, only : KSP_MAXITER,KSP_RTOL
 use math_constants, only : zero,zerotol
 
@@ -96,9 +96,9 @@ integer,intent(out) :: ksp_iter
 integer,intent(out) :: errcode
 character(len=250),intent(out) :: errtag
 
-integer :: i_elmt
+integer :: i_elmt, ncuda_devices
 integer,dimension(nedof) :: egdof
-real(kind=kreal) :: alpha,beta,rz,rznew,pkp
+real(kind=kreal) :: alpha,beta,rz,rznew,pkp, max_p, max_u
 real(kind=kreal),dimension(0:neq) :: kp,p,r,z,p2,kp2
 real(kind=kreal),dimension(nedof,nedof) :: km
 real :: t1,t2,t3,t4
@@ -131,9 +131,12 @@ z=dprecon*r
 
 p=z
 
+
+call initialize_cuda_device(myrank,ncuda_devices)
+
 call cpu_time(t1)
 
-call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,z,KSP_RTOL)
+call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,z,KSP_RTOL,myrank,NPROC,1,1)
 
 call cpu_time(t2)
 
@@ -142,7 +145,7 @@ print*, "Elapsed time for GPU init : ", t2 - t1
 
 
 !----pcg iteration----
-!pcg: do ksp_iter=1,KSP_MAXITER
+pcg: do ksp_iter=1,KSP_MAXITER
   !kp=zero
   !do i_elmt=1,nelmt
   !  egdof=gdof_elmt(:,i_elmt) !reshape(gdof(:,g_num(:,i_elmt)),(/nedof/))
@@ -151,12 +154,25 @@ print*, "Elapsed time for GPU init : ", t2 - t1
  !  kp(egdof)=kp(egdof)+matmul(km,p(egdof))
   !  kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
   !enddo
-call cpu_time(t3)
+  call cpu_time(t3)
 
-call gpu_superloop(GPU_pointer,KSP_MAXITER,u,ksp_iter,errcode)
-!  call compute_matvec_prod(GPU_pointer,p,kp) 
+  call gpu_loop1(GPU_pointer)
+
+  call gpu_loop2(GPU_pointer,max_p,max_u,alpha)
+
+  if (abs(alpha)*(abs(max_p))/abs(max_u) .le. KSP_RTOL) errcode=0
+
+  if (errcode == 0 ) then
+    call gpu_loop3(GPU_pointer)
+    call gpu_loop4(GPU_pointer,u)
+    return
+  else
+    call gpu_loop3(GPU_pointer)
+  endif
+
 call cpu_time(t4)
 print*, 'timing superloop ;', t4 - t3
+
 !  kp(0)=zero
 
 !  call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)
@@ -193,7 +209,7 @@ print*, 'timing superloop ;', t4 - t3
   !p=z+beta*p
   !write(*,'(i3,f25.18,f25.18,f25.18)')ksp_iter,alpha,beta,rz
 
-!enddo pcg
+enddo pcg
 
 !write(errtag,'(a)')'ERROR: PCG solver doesn''t converge!'
 return

@@ -92,7 +92,10 @@ OBJ = $(BIN)/global.o            \
       $(BIN)/plastic_library.o   \
       $(BIN)/postprocess.o       \
       $(BIN)/okada_solution.o    \
-      $(BIN)/GPU.cuda.o          \
+      $(BIN)/GPU_broken_loop.cuda.o          \
+      $(BIN)/initialize_cuda.cuda.o  \
+      $(BIN)/helper_functions.cuda.o  \
+      $(BIN)/prepare_GPU.cuda.o  \
 	    $(EMPTY_MACRO)
 
 # object tree for SEM serial

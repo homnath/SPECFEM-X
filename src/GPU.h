@@ -1,3 +1,6 @@
+#ifndef GPU_H
+#define GPU_H
+
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -22,12 +25,24 @@
 
 typedef double realw;
 
+void start_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop);
+void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str);
+void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str,float* t);
+void get_free_memory(double* free_db, double* used_db, double* total_db);
+
 typedef struct mesh_ {
 
 int nelmt;
 int neq;
 int nedof;
+int NPROC;
 
+// MPI variables
+realw * MPI_send_recv_buffer;
+int max_point;
+int ngpart;
+
+// Main GPU arrays
 realw * K;
 int * gdof_elmt ;  
 realw * kp;
@@ -54,39 +69,4 @@ cublasHandle_t cublas_handle;
 
 } Mesh;
 
-void start_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop){
-     cudaEventCreate(start);
-       cudaEventCreate(stop);
-         cudaEventRecord( *start, 0 );
-         }
-  
-         /* ----------------------------------------------------------------------------------------------- */
-  
-         void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str){
-           float time;
-  //           // stops events
-               cudaEventRecord( *stop, 0 );
-                 cudaEventSynchronize( *stop );
-                   cudaEventElapsedTime( &time, *start, *stop );
-                     cudaEventDestroy( *start );
-                       cudaEventDestroy( *stop );
-                         // user output
-                           printf("%s: Execution Time = %f ms\n",info_str,time);
-                           }
-  
-                           /* ----------------------------------------------------------------------------------------------- */
-  
-                           void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str,float* t){
-                             float time;
-                               // stops events
-                                 cudaEventRecord( *stop, 0 );
-                                   cudaEventSynchronize( *stop );
-                                    cudaEventElapsedTime( &time, *start, *stop );
-                                       cudaEventDestroy( *start );
-                                         cudaEventDestroy( *stop );
-                                           // user output
-                                             printf("%s: Execution Time = %f ms\n",info_str,time);
-  
-                                               // returns time
-                                                 *t = time;
-                                                 }
+#endif
