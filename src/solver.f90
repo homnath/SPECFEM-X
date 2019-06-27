@@ -133,68 +133,69 @@ p=z
 
 call cpu_time(t1)
 
-call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,KSP_RTOL)
+call prepare_gpu(GPU_pointer,k,nedof,nelmt,gdof_elmt,neq,f,dprecon,u,r,p,z,KSP_RTOL)
 
 call cpu_time(t2)
 
 print*, "Elapsed time for GPU init : ", t2 - t1
 
 
-call cpu_time(t1)
 
 !----pcg iteration----
-pcg: do ksp_iter=1,KSP_MAXITER
-  kp=zero
- ! do i_elmt=1,nelmt
+!pcg: do ksp_iter=1,KSP_MAXITER
+  !kp=zero
+  !do i_elmt=1,nelmt
   !  egdof=gdof_elmt(:,i_elmt) !reshape(gdof(:,g_num(:,i_elmt)),(/nedof/))
   ! km=k(:,:,i_elmt)
 
  !  kp(egdof)=kp(egdof)+matmul(km,p(egdof))
- !   kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
-!  enddo
+  !  kp(egdof)=kp(egdof)+matmul(k(:,:,i_elmt),p(egdof))
+  !enddo
 call cpu_time(t3)
-  call compute_matvec_prod(GPU_pointer,p,kp) 
-call cpu_time(t4)
-print*, 'timing loop ;', t4 - t3
-  kp(0)=zero
 
-  call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)
+call gpu_superloop(GPU_pointer,KSP_MAXITER,u,ksp_iter,errcode)
+!  call compute_matvec_prod(GPU_pointer,p,kp) 
+call cpu_time(t4)
+print*, 'timing superloop ;', t4 - t3
+!  kp(0)=zero
+
+!  call gpu_dot_product(GPU_pointer,r,z,neq+1,rz)
 
   !print *,'GPU',rz
   !rz=0.0 
   !rz=dot_product(r,z)
   !print *,'CPU',rz
-  call gpu_dot_product(GPU_pointer,p,kp,neq+1,pkp)
+!  call gpu_dot_product(GPU_pointer,p,kp,neq+1,pkp)
 
   ! alpha=rz/dot_product(p,kp)
-  alpha=rz/pkp
+  !alpha=rz/pkp
 
   ! u = u+alpha*p
   ! Vector operation:  u = u + alpha*p,
   ! where u and p are vectors and alpha is scalar 
-  call gpu_daxpy_1(GPU_pointer, u, p, alpha, neq+1) 
+!  call gpu_daxpy_1(GPU_pointer, u, p, alpha, neq+1) 
 
-  if(abs(alpha)*maxval(abs(p))/maxval(abs(u)).le.KSP_RTOL)then
-    errcode=0
+ ! if(abs(alpha)*maxval(abs(p))/maxval(abs(u)).le.KSP_RTOL)then
+   ! errcode=0
 
-    call cpu_time(t2)
-    print*, "Elapsed time for the big loop : ", t2 - t1
+   ! call cpu_time(t2)
+  !  print*, "Elapsed time for the big loop : ", t2 - t1
 
-    return
-  endif
+ !   return
+!  endif
 
-  r=r-alpha*kp
-  z=dprecon*r
+  !r=r-alpha*kp
+  !z=dprecon*r
 
-  call gpu_dot_product(GPU_pointer,r,z,neq+1,rznew)
+  !call gpu_dot_product(GPU_pointer,r,z,neq+1,rznew)
   !beta=dot_product(r,z)/rz
-  beta=rznew/rz
-  p=z+beta*p
+  !beta=rznew/rz
+  !p=z+beta*p
   !write(*,'(i3,f25.18,f25.18,f25.18)')ksp_iter,alpha,beta,rz
 
-enddo pcg
+!enddo pcg
 
-write(errtag,'(a)')'ERROR: PCG solver doesn''t converge!'
+!write(errtag,'(a)')'ERROR: PCG solver doesn''t converge!'
 return
 end subroutine ksp_pcg_solver
 !===============================================================================

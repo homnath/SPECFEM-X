@@ -36,15 +36,19 @@ realw * f;
 realw * dprecon; 
 realw* r;
 realw * p;
+realw* z;
 
 realw * p_loc;
 realw * kp_loc;
 
 // Scalar values
-realw * KSP_rtol;
+realw  KSP_rtol;
 realw * pkp;
 realw * beta;
 realw * rz;
+realw * rz_new;
+realw * alpha;
+
 //Cublas
 cublasHandle_t cublas_handle;
 

@@ -1,59 +1,5 @@
 #include "GPU.h"
 
-
-__inline__ __device__ realw warpReduceMax(realw v) {
-
- for (int offset = warpSize/2; offset > 0; offset /= 2) 
-    v = max(v,__shfl_xor(v, offset));
-  return v;
-}
-
-__inline__ __device__ realw blockReduceMax(realw val) {
-
-  static __shared__ realw shared[32]; // Shared mem for 32 partial sums
-  int lane = threadIdx.x % warpSize;
-  int wid = threadIdx.x / warpSize;
-
-  val = warpReduceMax(val);     // Each warp performs partial reduction
-
-  if (lane==0) shared[wid]=val; // Write reduced value to shared memory
-
-  __syncthreads();              // Wait for all partial reductions
-
-  //read from shared memory only if that warp existed
-  val = (threadIdx.x < blockDim.x / warpSize) ? shared[lane] : 0;
-
-  if (wid==0) val = warpReduceMax(val); //Final reduce within first warp
-
-  return val;
-}
-
-__global__ void deviceReducemaxKernel(realw *in, realw* out, int N) {
-  realw sum = 0.0;
-  //reduce multiple elements per thread
-  for (int i = blockIdx.x * blockDim.x + threadIdx.x; 
-       i < N; 
-       i += blockDim.x * gridDim.x) {
-    if (abs(in[i]) > sum) sum = abs(in[i]);
-  }
-  sum = blockReduceMax(sum);
-  if (threadIdx.x==0)  out[blockIdx.x]=sum;
-
-}
-
-void deviceReduceMax(realw *in, realw* out, int N) {
-  int threads = 512;
-  int blocks = min((N + threads - 1) / threads, 1024);
-  realw * max_temp;
-  cudaMalloc((void**) &max_temp,sizeof(realw)*blocks);
-
-  deviceReducemaxKernel<<<blocks, threads>>>(in, max_temp, N);
-  deviceReducemaxKernel<<<1, 1024>>>(max_temp, max_temp, blocks);
-  cudaMemcpy(out,max_temp,sizeof(realw),cudaMemcpyDeviceToHost);
-  cudaFree(max_temp);
-}
-
-
 __global__ void plus_reduce(realw *v1,realw*v2,int N,realw *total){
 
 int tid =threadIdx.x;
@@ -82,28 +28,35 @@ if(tid ==0)atomicAdd(total,x[tid]);
 
 
 // daxpy like routines
-__global__ void vecadd(realw *v1, realw *v2, realw c, int N) {
+__global__ void vecdaxpy(realw *v1, realw *v2, realw * c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec1 + c * vec2
-    if (index < N) v1[index] += c * v2[index];
+    if (index < N) v1[index] += *c * v2[index];
 }
 
-__global__ void vecsub(realw *v1, realw *v2, realw c, int N) {
+__global__ void vecdaxmy(realw *v1, realw *v2, realw * c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec1 - c * vec2
-    if (index < N) v1[index] -= c * v2[index];
+    if (index < N) v1[index] -= *c * v2[index];
+}
+
+
+__global__ void vecdiv(realw *v1, realw *v2, realw *c, int N) {
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    // vec1 = vec1 - c * vec2
+    if (index < N) c[index] = v1[index] / v2[index];
 }
 
 __global__ void vecmult(realw *v1, realw *v2, realw *v3, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = vec2  * vec3
-    if (index < N) v3[index] = v1[index] + v2[index];
+    if (index < N) v3[index] = v1[index] * v2[index];
 }
 
-__global__ void vecadd2(realw *v1, realw *v2, realw c, int N) {
+__global__ void vecadd2(realw *v1, realw *v2, realw *c, int N) {
     int index = threadIdx.x + blockIdx.x * blockDim.x;
     // vec1 = c * vec1 + vec2
-    if (index < N) v1[index] = c * v1[index] + v2[index] ;
+    if (index < N) v1[index] = *c * v1[index] + v2[index] ;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,7 +106,7 @@ void FC_FUNC_(gpu_daxpy_1,
 
   int nthreads =128;
   int nblocks = ceil(*size/nthreads ) + 1;
-  vecadd<<<nblocks,nthreads>>>(d_v1,d_v2,* scalar,*size); 
+ // vecdaxpy<<<nblocks,nthreads>>>(d_v1,d_v2,* scalar,*size); 
   cudaMemcpy(v1,d_v1,sizeof(realw)*(*size),cudaMemcpyDeviceToHost);
 
   cudaFree(d_v1);
@@ -185,32 +138,30 @@ atomicAdd(&kp[gdof_elmt[ivec * nedof + tid]],kp_loc[ivec * nedof + tid]);
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 extern "C"
-void FC_FUNC_(compute_matvec_prod,
-              COMPUTE_MATVEC_PROD)(long* gpu_pointer, realw * h_p, realw * h_kp){
-//  cudaEvent_t start,stop;
-//  start_timing_cuda(&start,&stop);
+void FC_FUNC_(gpu_superloop,
+              GPU_SUPERLOOP)(long* gpu_pointer, int * MAX_ITER, realw * h_u, int * h_iter, int * h_errcode){
+  cudaEvent_t start,stop,start1,stop1;
   Mesh* mp = (Mesh*)(*gpu_pointer); //get mesh pointer out of fortran integer container
 
-   // Cuda timing
-  cudaMemcpy(mp->p,h_p,sizeof(realw)*(mp->neq+1),cudaMemcpyHostToDevice);
-//  float time;
-//  stop_timing_cuda(&start,&stop,"first memcpy",&time);
-//  start_timing_cuda(&start,&stop);
+  int errcode = 1;
+  int iter = 1 ;
+
+  while(errcode != 0 && iter < *MAX_ITER){
+
+
+  float time;
+  start_timing_cuda(&start,&stop);
+  start_timing_cuda(&start1,&stop1);
   int N = mp->nelmt ;
 
-//  stop_timing_cuda(&start,&stop,"malloc",&time);
-//  start_timing_cuda(&start,&stop);
   cudaMemset(mp->kp,0,(mp->neq + 1)*sizeof(realw));
   int nthreads = 256;
   int nblocks = ceil((mp->neq + 1)/nthreads) + 1 ;
- // set_vec_zero<<<nblocks, nthreads>>>(mp->kp, (mp->neq + 1));
-///  stop_timing_cuda(&start,&stop,"after memset",&time);
-  // Cuda timing
-//  start_timing_cuda(&start,&stop);
+  stop_timing_cuda(&start,&stop,"after memset",&time);
+  start_timing_cuda(&start,&stop);
    nthreads = mp->nedof;
   int nblock = N;
 
-  //get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt + ielm * mp->nedof, mp->p,p_loc);
   const double beta = 0.0;
   const double alpha = 1.0; 
   
@@ -223,39 +174,98 @@ void FC_FUNC_(compute_matvec_prod,
   realw * A = mp->K;
   double * &B = mp->p_loc;
   double * &C = mp->kp_loc;
-//  stop_timing_cuda(&start,&stop,"in between",&time);
+  stop_timing_cuda(&start,&stop,"in between",&time);
   // Cuda timing
-//  start_timing_cuda(&start,&stop);
-
+  start_timing_cuda(&start,&stop);
+  
   
   get_p_loc_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->p, B);
-//  stop_timing_cuda(&start,&stop,"p_loc",&time);
-// start_timing_cuda(&start,&stop);
+  stop_timing_cuda(&start,&stop,"p_loc",&time);
+ start_timing_cuda(&start,&stop);
 
   cublasDgemmStridedBatched(mp->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
 
-//  stop_timing_cuda(&start,&stop,"cublas",&time);
-// start_timing_cuda(&start,&stop);
+  stop_timing_cuda(&start,&stop,"cublas",&time);
+ start_timing_cuda(&start,&stop);
 
   assemble_kp_vector<<<nblock,nthreads>>>(mp->gdof_elmt, mp->kp, C);
 
-//  stop_timing_cuda(&start,&stop,"assemble",&time);
-//  start_timing_cuda(&start,&stop);
-   //printf("finished loop\n");
-realw max_temp;
-deviceReduceMax( mp->kp, &max_temp, mp->neq + 1); 
-  cudaMemcpy(h_kp,mp->kp,sizeof(realw)*(mp->neq+1),cudaMemcpyDeviceToHost);
+  stop_timing_cuda(&start,&stop,"assemble",&time);
+  start_timing_cuda(&start,&stop);
+
+cublasDdot_v2(mp->cublas_handle, mp->neq+1, mp->r, 1, mp->z, 1, mp->rz);
+
+cublasDdot_v2(mp->cublas_handle, mp->neq+1, mp->p, 1, mp->kp, 1, mp->pkp);
 
 
-printf("max from kernel : %lf\n",max_temp);
+  stop_timing_cuda(&start,&stop,"dot products",&time);
+  start_timing_cuda(&start,&stop);
 
+vecdiv<<<1,1>>>( mp->rz,mp->pkp,mp->alpha,1);
+nthreads =128;
+nblocks = ceil((mp->neq+1)/nthreads ) + 1;
+
+vecdaxpy<<<nblocks,nthreads>>>(mp->u,mp->p,mp->alpha,mp->neq+1);
+cudaDeviceSynchronize();
+
+
+  stop_timing_cuda(&start,&stop,"daxpy",&time);
+  start_timing_cuda(&start,&stop);
+
+realw alpha2;
+realw max_p = 0;
+realw max_u = 0;
+
+int pidx = 0;
+int uidx = 0;
+cublasIdamax(mp->cublas_handle, mp->neq + 1, mp->p, 1, &pidx);
+cublasIdamax(mp->cublas_handle, mp->neq + 1, mp->u, 1, &uidx);
+cudaMemcpy(&max_p, mp->p + pidx - 1, sizeof(realw), cudaMemcpyDeviceToHost);
+cudaMemcpy(&max_u, mp->u + uidx - 1, sizeof(realw), cudaMemcpyDeviceToHost);
+max_p = abs(max_p);
+max_u = abs(max_u);
+//printf("max_p=%e %e, max_u=%lf %lf\n", max_p, max_p2, max_u, max_u2);
+
+
+cudaMemcpy(&alpha2,mp->alpha,sizeof(realw),cudaMemcpyDeviceToHost);
+
+if (abs(alpha2)*max_p/max_u <= mp->KSP_rtol) {
+    errcode=0;
+    break;
+}
+
+
+  stop_timing_cuda(&start,&stop,"max",&time);
+  start_timing_cuda(&start,&stop);
+
+
+vecdaxmy<<<nblocks,nthreads>>>(mp->r,mp->kp,mp->alpha,mp->neq+1);
+vecmult<<<nblocks,nthreads>>>(mp->dprecon,mp->r,mp->z,mp->neq+1);
+
+cublasDdot_v2(mp->cublas_handle, mp->neq+1, mp->r, 1, mp->z, 1, mp->rz_new);
+
+vecdiv<<<1,1>>>( mp->rz_new,mp->rz,mp->beta,1);
+vecadd2<<<nblocks,nthreads>>>(mp->p, mp->z,mp->beta,mp->neq+1);
+
+  stop_timing_cuda(&start,&stop,"last loop part",&time);
+  start_timing_cuda(&start,&stop);
+
+  stop_timing_cuda(&start1,&stop1,"full loop",&time);
+printf("");
 //  stop_timing_cuda(&start,&stop,"memcpy",&time);
+iter += 1 ; 
+}
+
+if ( errcode == 0 ) cudaMemcpy(h_u,mp->u,(mp->neq+1)*sizeof(realw),cudaMemcpyDeviceToHost);
+*h_iter = iter;
+*h_errcode = errcode;
 
 }
 
+
 extern "C"
 void FC_FUNC_(prepare_gpu,
-              PREPARE_GPU)(long* gpu_pointer, realw * h_K, int * nedof, int * nelmt, int * h_gdof_elmt, int * neq,realw * f, realw* dprecon, realw* u, realw * r, realw * p,realw * KSP_rtol){
+              PREPARE_GPU)(long* gpu_pointer, realw * h_K, int * nedof, int * nelmt, int * h_gdof_elmt, int * neq,realw * f, realw* dprecon, realw* u, realw * r, realw * p,realw*z, realw * KSP_rtol){
 
   Mesh* mp = (Mesh*) malloc( sizeof(Mesh) );
   *gpu_pointer = (long)mp;
@@ -292,6 +302,9 @@ void FC_FUNC_(prepare_gpu,
   cudaMalloc((void**) &mp->r,(*neq + 1)*sizeof(realw));
   cudaMemcpy(mp->r,r,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
 
+  cudaMalloc((void**) &mp->z,(*neq + 1)*sizeof(realw));
+  cudaMemcpy(mp->z,z,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
+
   cudaMalloc((void**) &mp->p,(*neq + 1)*sizeof(realw));
   cudaMemcpy(mp->p,p,sizeof(realw)*(*neq+1),cudaMemcpyHostToDevice);
 
@@ -301,11 +314,11 @@ void FC_FUNC_(prepare_gpu,
   cudaMalloc((void**) &mp->p_loc,(*nedof*(*nelmt))*sizeof(realw));
   cudaMalloc((void**) &mp->kp_loc,(*nedof*(*nelmt))*sizeof(realw));
 
-  cudaMalloc((void**) &mp->KSP_rtol,sizeof(realw));
-  cudaMemcpy(mp->KSP_rtol,KSP_rtol,sizeof(realw),cudaMemcpyHostToDevice);
+  mp->KSP_rtol = *KSP_rtol ;
 
   cudaMalloc((void**) &mp->rz,sizeof(realw));
+  cudaMalloc((void**) &mp->rz_new,sizeof(realw));
   cudaMalloc((void**) &mp->beta,sizeof(realw));
   cudaMalloc((void**) &mp->pkp,sizeof(realw));
-
+  cudaMalloc((void**) &mp->alpha,sizeof(realw));
 }
