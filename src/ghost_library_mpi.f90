@@ -287,6 +287,47 @@ do i_gpart=1,ngpart
 enddo ! do i_gpart
 return
 end subroutine modify_ghost
+
+!===============================================================================
+
+! This subroutine assembles the contributions of all ghost partitions
+! at gdof locations
+subroutine send_ghosts_for_gpu_mode(nndof,neq,send_array,recv_array)
+!use math_library, only : maxscal_par
+use mpi
+implicit none
+integer,intent(in) :: nndof,neq
+real(kind=kreal),dimension(nndof*maxngnode,ngpart), intent(in) :: send_array
+real(kind=kreal),dimension(nndof*maxngnode,ngpart), intent(out) :: recv_array
+integer,parameter :: tag=0
+integer, dimension(MPI_STATUS_SIZE) :: mpistatus
+integer,dimension(ngpart) :: send_req,recv_req
+real(kind=kreal),parameter :: zero=0.0_kreal
+integer :: ierr,i_gpart,ncount
+
+do i_gpart=1,ngpart
+  ncount=gpart(i_gpart)%nnode*nndof
+  ! send
+  call MPI_ISSEND(send_array(:,i_gpart),ncount,MPI_KREAL,gpart(i_gpart)%rank,  &
+  tag,MPI_COMM_WORLD,send_req(i_gpart),ierr)
+  ! receive
+  call MPI_IRECV(recv_array(:,i_gpart),ncount,MPI_KREAL,gpart(i_gpart)%rank,   &
+  tag,MPI_COMM_WORLD,recv_req(i_gpart),ierr)
+enddo
+! wait for receive-communications completion (recv)
+do i_gpart=1,ngpart
+  call MPI_WAIT(recv_req(i_gpart),mpistatus,ierr)
+enddo
+
+! wait for send communications completion (send)
+do i_gpart=1,ngpart
+  call MPI_WAIT(send_req(i_gpart),mpistatus,ierr)
+enddo
+call sync_process()
+return
+end subroutine send_ghosts_for_GPU_mode
+
+
 !===============================================================================
 
 ! This subroutine assembles the contributions of all ghost partitions

@@ -101,6 +101,7 @@ integer,dimension(nedof) :: egdof
 real(kind=kreal) :: alpha,beta,rz,rznew,pkp, max_p, max_u
 real(kind=kreal),dimension(0:neq) :: kp,p,r,z,p2,kp2
 real(kind=kreal),dimension(nedof,nedof) :: km
+real(kind=kreal),dimension(1,1) :: dummy_array
 real :: t1,t2,t3,t4
 
 errtag="ERROR: unknown!"
@@ -156,9 +157,9 @@ pcg: do ksp_iter=1,KSP_MAXITER
   !enddo
   call cpu_time(t3)
 
-  call gpu_loop1(GPU_pointer)
+  call gpu_loop1(GPU_pointer,dummy_array)
 
-  call gpu_loop2(GPU_pointer,max_p,max_u,alpha)
+  call gpu_loop2(GPU_pointer,max_p,max_u,alpha,dummy_array)
 
   if (abs(alpha)*(abs(max_p))/abs(max_u) .le. KSP_RTOL) errcode=0
 

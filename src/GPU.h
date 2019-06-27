@@ -26,9 +26,10 @@
 typedef double realw;
 
 void start_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop);
-void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str);
 void stop_timing_cuda(cudaEvent_t* start,cudaEvent_t* stop,const char* info_str,float* t);
 void get_free_memory(double* free_db, double* used_db, double* total_db);
+
+
 
 typedef struct mesh_ {
 
@@ -41,7 +42,8 @@ int NPROC;
 realw * MPI_send_recv_buffer;
 int max_point;
 int ngpart;
-
+int * mpi_count;
+int * mpi_gdof;
 // Main GPU arrays
 realw * K;
 int * gdof_elmt ;  
