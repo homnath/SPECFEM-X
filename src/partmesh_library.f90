@@ -656,7 +656,10 @@ bc: do ! ibc=1,nbc
     mpart(ipart)%iloc(mpart_icount(ipart))=i_elmt
   enddo
 
-  bc_elmt(1,:)=glob2loc_elmt(bc_elmt(1,:)) ! local element numbering in the partition
+  !bc_elmt(1,:)=glob2loc_elmt(bc_elmt(1,:)) ! local element numbering in the partition
+  do i_elmt=1,bc_nelmt
+    bc_elmt(1,i_elmt)=glob2loc_elmt(bc_elmt(1,i_elmt)) ! local element numbering in the partition
+  enddo
 
   ! format string for element ID and face ID
   write(format_str1,*)ceiling(log10(real(maxval(bc_elmt(1,:)))+1.))
