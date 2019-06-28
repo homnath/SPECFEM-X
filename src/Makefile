@@ -7,6 +7,8 @@ BIN = ../bin
 
 FORTRAN_COMPILER = INTEL
 
+CUDA = no#yes
+
 ifeq ($(FORTRAN_COMPILER), INTEL)
 	FC = ifort
 	MPIFC = mpiifort #mpif90
@@ -22,12 +24,13 @@ else
 	CFLAGS = -O3
 endif
 
-
+ifeq ($(CUDA), yes)
 NVCC = nvcc
 GENCODE_60 = -gencode=arch=compute_60,code=\"sm_60,compute_60\"
 NVCC_FLAGS_BASE = $(CUDA_FLAGS) $(CUDA_INC) $(MPI_INCLUDES) $(COND_MPI_CPPFLAGS)
 NVCC_FLAGS = $(NVCC_FLAGS_BASE) -DCUDA $(GENCODE_60) -ftz=true  -L/usr/local/cuda-10.1/lib64
 CUDA_LINK =  -L/usr/local/cuda-10.1/lib64 -lcudart -lstdc++ -lcudadevrt -lcublas
+endif
 
 ## serial fortran compiler
 ##FC = gfortran
@@ -92,15 +95,30 @@ OBJ = $(BIN)/global.o            \
       $(BIN)/plastic_library.o   \
       $(BIN)/postprocess.o       \
       $(BIN)/okada_solution.o    \
-      $(BIN)/GPU.cuda.o          \
 	    $(EMPTY_MACRO)
+
+ifeq ($(CUDA), yes)
+
+CUDA_OBJ = $(BIN)/GPU_broken_loop.cuda.o          \
+           $(BIN)/initialize_cuda.cuda.o  \
+           $(BIN)/helper_functions.cuda.o  \
+           $(BIN)/prepare_GPU.cuda.o  \
+           $(EMPTY_MACRO)
+
+else
+
+OBJ +=  $(BIN)/GPU_stubs.c.o    \
+          $(EMPTY_MACRO)
+
+endif
+
 
 # object tree for SEM serial
 OBJ_SEM = $(BIN)/serial_library.o \
           $(BIN)/math_library_serial.o   \
 	        $(BIN)/prepare_sparse_serial.o	\
           $(BIN)/solver.o         \
-          $(BIN)/solver_petsc.o   \
+#          $(BIN)/solver_petsc.o   \
 	        $(EMPTY_MACRO)
 
 # object tree for SEMMPI parallel
@@ -110,7 +128,7 @@ OBJ_SEMMPI = $(BIN)/set_precision_mpi.o \
              $(BIN)/ghost_library_mpi.o \
 	           $(BIN)/prepare_sparse.o	\
              $(BIN)/parsolver.o	\
-	    			 $(BIN)/parsolver_petsc.o \
+#	    			 $(BIN)/parsolver_petsc.o \
 	           $(EMPTY_MACRO)
 
 # object for both serial and MPI
@@ -169,14 +187,48 @@ all: clean partmesh specfem-x pspecfem-x
 
 debug: clean partmesh specfem-x pspecfem-x 
 
+
+ifeq ($(CUDA),yes)
+
 specfem-x: $(OBJ_specfem-x)
-	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB)  $(CUDA_LINK)
+	@echo ""
+	@echo "building specfem-x with CUDA support"
+	@echo ""
+	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB) $(CUDA_OBJ) $(CUDA_LINK)
+	@echo ""
 
 pspecfem-x: $(OBJ_pspecfem-x)
-	$(FC_COMPILE) -o $(pspecfem-x) $(OBJ_pspecfem-x) $(LIBMPI) ${PETSC_KSP_LIB}
+	@echo ""
+	@echo "building pspecfem-x with CUDA support"
+	@echo ""
+	$(FC_COMPILE) -o $(pspecfem-x) $(OBJ_pspecfem-x) $(LIBMPI) ${PETSC_KSP_LIB} $(CUDA_OBJ) $(CUDA_LINK) 
+
+else
+
+specfem-x: $(OBJ_specfem-x)
+	@echo ""
+	@echo "building specfem-x without CUDA support"
+	@echo ""
+	$(FC_COMPILE) -o $(specfem-x) $(OBJ_specfem-x) $(LIB) $(CUDA_STUBS)
+	@echo ""
+
+pspecfem-x: $(OBJ_pspecfem-x)
+	@echo ""
+	@echo "building pspecfem-x without CUDA support"
+	@echo ""
+	$(FC_COMPILE) -o $(pspecfem-x) $(OBJ_pspecfem-x) $(LIBMPI) ${PETSC_KSP_LIB} $(CUDA_STUBS)
+
+endif
+
+
+
 
 partmesh: $(OBJ_PARTMESH)
 	$(FC_COMPILE) -o ${PARTMESH} $(OBJ_PARTMESH) $(LIBSCOTCH)
+
+
+
+
 
 # compile file which can be compiled as both serial and parllel versions
 # serial
@@ -325,8 +377,8 @@ $(BIN)/benchmark.o: benchmark.F90
 $(BIN)/solver.o: solver.f90
 	$(FC_COMPILE) -c -o $(BIN)/solver.o solver.f90
 
-$(BIN)/solver_petsc.o: solver_petsc.f90
-	$(FC_COMPILE) -c -o $(BIN)/solver_petsc.o solver_petsc.f90
+#$(BIN)/solver_petsc.o: solver_petsc.f90
+#	$(FC_COMPILE) -c -o $(BIN)/solver_petsc.o solver_petsc.f90
 
 $(BIN)/parsolver.o: parsolver.f90
 	$(FC_COMPILE) -c -o $(BIN)/parsolver.o parsolver.f90
@@ -334,8 +386,8 @@ $(BIN)/parsolver.o: parsolver.f90
 #$(BIN)/parsolver_petsc.o: parsolver_petsc.F90
 #	$(FC_COMPILE) ${INCPETSC} -cpp -c -o $(BIN)/parsolver_petsc.o parsolver_petsc.F90 -L${PETSC_DIR}/lib/petsc/conf/variables
 
-$(BIN)/parsolver_petsc.o: parsolver_petsc.F90
-	$(FC_COMPILE) ${INCPETSC} -cpp -c -o $(BIN)/parsolver_petsc.o parsolver_petsc.F90
+#$(BIN)/parsolver_petsc.o: parsolver_petsc.F90
+#	$(FC_COMPILE) ${INCPETSC} -cpp -c -o $(BIN)/parsolver_petsc.o parsolver_petsc.F90
 
 #	$(FC_COMPILE) ${PETSC_FC_INCLUDES} -cpp -c -o $(BIN)/parsolver_petsc.o parsolver_petsc.f90 ${PETSC_KSP_LIB}
 # both of the above two work fine
@@ -371,7 +423,11 @@ $(BIN)/partmesh_scotch.o: partmesh_scotch.f90 partmesh_library.f90
 $(BIN)/partmesh.o: partmesh.f90
 	$(FC_COMPILE) -c -o $(BIN)/partmesh.o partmesh.f90
 
+CC =gcc
+
+$(BIN)/GPU_stubs.c.o: GPU_stubs.c GPU.h
+	${CC} -c -o $(BIN)/GPU_stubs.c.o GPU_stubs.c 
+
 $(BIN)/%.cuda.o: %.cu GPU.h
 	${NVCC} -c $< -o $@ $(NVCC_FLAGS)
-
 
