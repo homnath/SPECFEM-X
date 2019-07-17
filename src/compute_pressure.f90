@@ -4,11 +4,10 @@
 !   HNG, Jul 12,2011; HNG, Apr 09,2010; HNG, Dec 08,2010
 ! TODO:
 !   partially saturated
-subroutine compute_pressure(ismpi,wpressure,submerged_node,errcode,errtag)
+subroutine compute_pressure(wpressure,submerged_node,errcode,errtag)
 use global
 use math_library,only:determinant
 implicit none
-logical,intent(in) :: ismpi
 integer,intent(out) :: errcode
 character(len=250),intent(out) :: errtag
 real(kind=kreal),dimension(nnode) :: wpressure ! water pressure

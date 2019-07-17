@@ -59,12 +59,13 @@ __global__ void vecadd2(realw *v1, realw *v2, realw *c, int N) {
     if (index < N) v1[index] = *c * v1[index] + v2[index] ;
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 
 extern "C"
 void FC_FUNC_(gpu_dot_product,
-              GPU_DOT_PRODUCT)(long* gpu_pointer, realw * v1, realw * v2, int * size,realw * product) {
+              GPU_DOT_PRODUCT)(long* gpu_pointer, realw * v1, realw * v2, 
+                               int * size,realw * product) {
   realw * d_v1;
   cudaMalloc((void**) &d_v1, *size*sizeof(realw)); 
   cudaMemcpy(d_v1,v1,sizeof(realw)*(*size),cudaMemcpyHostToDevice);
@@ -92,7 +93,8 @@ void FC_FUNC_(gpu_dot_product,
 
 extern "C"
 void FC_FUNC_(gpu_daxpy_1,
-              GPU_DAXPY_1)(long* gpu_pointer, realw * v1, realw * v2, realw * scalar, int * size) {
+              GPU_DAXPY_1)(long* gpu_pointer, realw * v1, realw * v2, 
+                           realw * scalar, int * size) {
   
   // Takes in two vectors and a scalar and recomputes the first vector:
   // v1 = v1 + v2*scalar 
@@ -135,13 +137,15 @@ atomicAdd(&kp[gdof_elmt[ivec * nedof + tid]],kp_loc[ivec * nedof + tid]);
 }
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 extern "C"
 void FC_FUNC_(gpu_superloop,
-              GPU_SUPERLOOP)(long* gpu_pointer, int * MAX_ITER, realw * h_u, int * h_iter, int * h_errcode){
+              GPU_SUPERLOOP)(long* gpu_pointer, int * MAX_ITER, realw * h_u, 
+                             int * h_iter, int * h_errcode){
   cudaEvent_t start,stop,start1,stop1;
-  Mesh* mp = (Mesh*)(*gpu_pointer); //get mesh pointer out of fortran integer container
+  //get mesh pointer out of fortran integer container
+  Mesh* mp = (Mesh*)(*gpu_pointer);
 
   int errcode = 1;
   int iter = 1 ;
@@ -183,7 +187,9 @@ void FC_FUNC_(gpu_superloop,
   stop_timing_cuda(&start,&stop,"p_loc",&time);
  start_timing_cuda(&start,&stop);
 
-  cublasDgemmStridedBatched(mp->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
+  cublasDgemmStridedBatched(mp->cublas_handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, 
+                            k, &alpha, A, lda, mp->nedof * mp->nedof, B, ldb, 
+                            mp->nedof, &beta, C, ldc, mp->nedof, mp->nelmt);
 
   stop_timing_cuda(&start,&stop,"cublas",&time);
  start_timing_cuda(&start,&stop);
@@ -261,5 +267,4 @@ if ( errcode == 0 ) cudaMemcpy(h_u,mp->u,(mp->neq+1)*sizeof(realw),cudaMemcpyDev
 *h_errcode = errcode;
 
 }
-
 
