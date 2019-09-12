@@ -21,12 +21,12 @@ IF("${specfem-x_SOURCE_DIR}"  STREQUAL "${specfem-x_BINARY_DIR}")
   MESSAGE(FATAL_ERROR "Specfem_X requires an out-of-source build. Please create a separate build directory and run CMake there.")
 ENDIF("${specfem-x_SOURCE_DIR}"  STREQUAL "${specfem-x_BINARY_DIR}")
 
-# Set a default build type if none was specified                                
-IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)                      
-  MESSAGE(STATUS "Setting build type to 'Debug' as none was specified.")        
-  SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)    
-  # Set the possible values of build type for cmake-gui                         
-  SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")                                              
+# Set a default build type if none was specified
+IF(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  MESSAGE(STATUS "Setting build type to 'Debug' as none was specified.")
+  SET(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
+  # Set the possible values of build type for cmake-gui
+  SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
 ENDIF()
 
 # Test Fortran compiler
@@ -46,9 +46,9 @@ SET(PDIR ${CMAKE_BINARY_DIR}/tmp)
 SET(SDIR ${CMAKE_SOURCE_DIR})
 FILE(MAKE_DIRECTORY ${BDIR})
 #FILE(MAKE_DIRECTORY ${DDIR})
-FILE(MAKE_DIRECTORY ${IDIR}) 
-FILE(MAKE_DIRECTORY ${ODIR}) 
-FILE(MAKE_DIRECTORY ${PDIR}) 
+FILE(MAKE_DIRECTORY ${IDIR})
+FILE(MAKE_DIRECTORY ${ODIR})
+FILE(MAKE_DIRECTORY ${PDIR})
 
 # set paths to executable and libraries
 SET(EXECUTABLE_OUTPUT_PATH ${BDIR})
@@ -106,7 +106,7 @@ IF(ENABLE_MPI)
     MESSAGE(WARNING "MPI Fortran compiler not found! Parallel specfem-x cannot be built!")
     SET(ISPARALLEL OFF)
   ENDIF(NOT MPI_FOUND)
-  
+
   # Test MPI Fortran compiler
   TRY_COMPILE(TEST_MPI ${CMAKE_BINARY_DIR}/CMakeTmp ${CMAKE_SOURCE_DIR}/src/testmpi.f90
   #COMPILE_DEFINITIONS USE_MPI
@@ -116,7 +116,7 @@ IF(ENABLE_MPI)
   IF(NOT TEST_MPI)
     MESSAGE(WARNING "MPI Fortran compiler: ${MPI_Fortran_COMPILER} doesn't work! Parallel specfem-x cannot be built! ${test}")
     SET(ISPARALLEL OFF)
-  ENDIF(NOT TEST_MPI) 
+  ENDIF(NOT TEST_MPI)
 ENDIF(ENABLE_MPI)
 
 # to be used with cmake-modules
@@ -150,4 +150,3 @@ ADD_SUBDIRECTORY(util)
 
 # notes
 #SET_SOURCE_FILES_PROPERTIES(${SRC} PROPERTIES LANGUAGE "C")
-

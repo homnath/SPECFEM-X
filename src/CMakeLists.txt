@@ -1,8 +1,7 @@
-# build main programs
 # REVISION:
 #   HNG, Mar 21,2017; HNG, Sep 06,2011;
 
-# build sem library
+# Source files for sem library
 SET(srcsem
   global.f90
   string_library.f90
@@ -62,7 +61,6 @@ ELSE(ISPARALLEL)
   ADD_LIBRARY(serial ${srcserial})
   ADD_DEPENDENCIES(serial sem)
 ENDIF(ISPARALLEL)
-
 
 SET(srcboth
    model.F90
@@ -153,4 +151,3 @@ ${SCOTCH_INCLUDE_PATH})
   TARGET_LINK_LIBRARIES(partmesh partscotch
 ${SCOTCH_LIBRARY_PATH}/libscotch.a ${SCOTCH_LIBRARY_PATH}/libscotcherr.a)
 ENDIF(ISPARTMESH)
-
