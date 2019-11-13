@@ -151,7 +151,7 @@ OBJ_PARTMESH = $(BIN)/global.o           \
 							 $(BIN)/serial_library.o   \
 							 $(BIN)/math_library.o     \
                $(BIN)/element.o          \
-               $(BIN)/infinite_layer.o \
+               $(BIN)/infinite_layer.o 	 \
                $(BIN)/partmesh_library.o \
 							 $(BIN)/recreate_fault.o   \
 							 $(BIN)/read_input.o       \
@@ -163,13 +163,13 @@ OBJ_specfem-x =  $(OBJ)               \
                 $(OBJ_SEM)           \
 							  $(OBJ_BOTH_SERIAL)   \
 							  $(BIN)/specfem3d.o  \
-							  $(BIN)/specfemx.o    \
+							  $(BIN)/specfem-x.o    \
 	              $(EMPTY_MACRO)
 OBJ_pspecfem-x = $(OBJ)               \
                 $(OBJ_SEMMPI)        \
 								$(OBJ_BOTH_PARALLEL) \
 								$(BIN)/pspecfem3d.o \
-								$(BIN)/pspecfemx.o   \
+								$(BIN)/pspecfem-x.o   \
 	              $(EMPTY_MACRO)
 
 # main executable for spectral-element method
@@ -407,11 +407,11 @@ $(BIN)/pspecfem3d.o: specfem3d.F90
 
 # following objective files are compiled from the same file but with
 # different compiler preprocessing directives options.
-$(BIN)/specfemx.o: specfemx.F90
-	$(FC_COMPILE) -c -o $(BIN)/specfemx.o specfemx.F90
+$(BIN)/specfem-x.o: specfem-x.F90
+	$(FC_COMPILE) -c -o $(BIN)/specfem-x.o specfem-x.F90
 
-$(BIN)/pspecfemx.o: specfemx.F90
-	$(FC_COMPILE) -DUSE_MPI -c -o $(BIN)/pspecfemx.o specfemx.F90
+$(BIN)/pspecfem-x.o: specfem-x.F90
+	$(FC_COMPILE) -DUSE_MPI -c -o $(BIN)/pspecfem-x.o specfem-x.F90
 
 # mesh partition
 $(BIN)/partmesh_library.o: partmesh_library.f90
