@@ -36,9 +36,9 @@ SET(srcsem
   postprocess.f90)
 ADD_LIBRARY(sem ${srcsem})
 
-# build parallel library
+# build parsem library
 IF(ISPARALLEL)
-  SET(srcparallel
+  SET(srcparsem
      set_precision_mpi.f90
      mpi_library.f90
      math_library_mpi.f90
@@ -46,10 +46,10 @@ IF(ISPARALLEL)
      prepare_sparse.f90
      parsolver.f90
      parsolver_petsc.F90)
-  ADD_LIBRARY(parallel ${srcparallel})
-  ADD_DEPENDENCIES(parallel sem)
-  TARGET_INCLUDE_DIRECTORIES(parallel PUBLIC "${PETSC_DIR}/include" "${PETSC_ARCH}/include")
-  TARGET_LINK_LIBRARIES(parallel ${PETSC_ARCH}/lib/libpetsc.so)
+  ADD_LIBRARY(parsem ${srcparsem})
+  ADD_DEPENDENCIES(parsem sem)
+  TARGET_INCLUDE_DIRECTORIES(parsem PUBLIC "${PETSC_DIR}/include" "${PETSC_ARCH}/include")
+  TARGET_LINK_LIBRARIES(parsem ${PETSC_ARCH}/lib/libpetsc.so)
 # build serial library
 ELSE(ISPARALLEL)
   SET(srcserial
@@ -76,7 +76,7 @@ IF(ISPARALLEL)
 ENDIF(ISPARALLEL)
 ADD_LIBRARY(both ${srcboth})
 IF(ISPARALLEL)
-  ADD_DEPENDENCIES(both sem parallel)
+  ADD_DEPENDENCIES(both sem parsem)
 ELSE(ISPARALLEL)
   ADD_DEPENDENCIES(both sem serial)
 ENDIF(ISPARALLEL)
@@ -100,7 +100,7 @@ IF(ISPARALLEL)
 ENDIF(ISPARALLEL)
 ADD_LIBRARY(geotech ${srcgeotech})
 IF(ISPARALLEL)
-  ADD_DEPENDENCIES(geotech sem parallel both)
+  ADD_DEPENDENCIES(geotech sem parsem both)
 ELSE(ISPARALLEL)
   ADD_DEPENDENCIES(geotech sem serial both)
 ENDIF(ISPARALLEL)
@@ -111,7 +111,7 @@ ENDIF(ISPARALLEL)
 IF(ISPARALLEL)
   SET_PROPERTY(SOURCE specfem-x.F90 PROPERTY COMPILE_DEFINITIONS USE_MPI)
   #SET_PROPERTY(SOURCE specfem-x.F90 PROPERTY INCLUDE_DIRECTORIES ${MPI_Fortran_INCLUDE_PATH})
-  SET(LIBS geotech both parallel sem ${MPI_Fortran_LIBRARIES})
+  SET(LIBS geotech both parsem sem ${MPI_Fortran_LIBRARIES})
   SET(mainprog pspecfem-x)
 ELSE(ISPARALLEL)
   SET(LIBS geotech both serial sem)
@@ -121,7 +121,7 @@ ADD_EXECUTABLE(${mainprog}
               specfem-x.F90)
 TARGET_LINK_LIBRARIES(${mainprog} ${LIBS})
 #IF(ISPARALLEL)
-#  SET(semall geotech parallel sem)
+#  SET(semall geotech parsem sem)
 #ELSE(ISPARALLEL)
 #  SET(semall geotech serial sem)
 #ENDIF(ISPARALLEL)
