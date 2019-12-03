@@ -53,7 +53,7 @@ character(len=1) :: tmp_char
 character(len=80),dimension(50) :: args
 integer :: id,ind,ios,narg,slen
 
-integer :: bc_stat,preinfo_stat,mesh_stat,material_stat,control_stat,          &
+integer :: bc_stat,preinfo_stat,mesh_stat,material_stat,step_stat,control_stat,&
 eqload_stat,stress0_stat,traction_stat,mtraction_stat,water_stat,save_stat,    &
 eqsource_stat,benchmark_stat,station_stat,devel_stat,mag_stat
 integer :: mat_count
@@ -107,6 +107,7 @@ water_stat=0
 mesh_stat=-1
 material_stat=-1
 stress0_stat=-1
+step_stat=-1
 control_stat=-1
 eqsource_stat=0
 station_stat=0
@@ -198,6 +199,12 @@ eqkz=0.0_kreal
 ! default KSP parameters are set in global.f90
 ! default NL parameters
 nl_tol=zerotol; nl_maxiter=1
+
+! Stepping
+steptype=0 ! time
+nstep=0
+step0=ZERO
+step1=ZERO
 
 nexcav=0
 nsrf=1 ! number of strength reduction factors
@@ -765,6 +772,23 @@ do
     iswater=.true.
     cycle
   endif
+
+  ! read stepping information                                                    
+  if (trim(token)=='step:')then                                                  
+    if(step_stat==1)then                                                         
+      write(errtag,*)'ERROR: copy of line type step: not permitted!'             
+      return                                                                     
+    endif                                                                        
+    call split_string(tag,',',args,narg)                                         
+    steptype=get_integer('type',args,narg)                                       
+    step0=get_real('start',args,narg)                                            
+    step1=get_real('end',args,narg)                                              
+    dstep=get_real('step',args,narg)                                             
+    !---------------------------                                                 
+                                                                                 
+    step_stat=1                                                                  
+    cycle                                                                        
+  endif      
 
   ! read control information
   if (trim(token)=='control:')then

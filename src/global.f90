@@ -331,12 +331,20 @@ integer,allocatable :: g_num_finite(:,:),g_num_trinfinite(:,:),g_num_infinite(:,
 integer,allocatable :: elmt_finite(:),elmt_trinfinite(:),elmt_infinite(:) 
 integer :: nnode_finite,nnode_trinfinite,nnode_infinite
 integer,allocatable :: node_finite(:),node_trinfinite(:),node_infinite(:) 
+
+! stepping (time or frequency) parameters                                                 
+integer,parameter :: TIMESTEP=0, FREQSTEP=1                                      
+integer :: steptype,nstep                                                        
+real(kind=kreal) :: step0,step1,dstep
+
+! Control parameters
 integer :: nl_maxiter
 real(kind=kreal) :: nl_tol
 integer :: nexcav,ninc,nsrf,ntstep
 real(kind=kreal) :: dtstep
 ! time unit: 'second', 'minute', 'hour', 'day', 'month', 'year'
 character(len=10) :: tunit
+
 ! Excavation ID (regions), number
 ! of excavation IDs (regions) in each stage
 ! Excavation ID (regions), number of excavation IDs (regions) in each stage
