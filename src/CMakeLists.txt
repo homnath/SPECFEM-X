@@ -27,6 +27,7 @@ SET(srcsem
   gindex.f90
   apply_traction.f90
   apply_mtraction.f90
+  source_function.f90
   map_location.f90
   free_surface.f90
   compute_pressure.f90
