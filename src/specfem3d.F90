@@ -32,13 +32,13 @@ use ghost_library_mpi
 use math_library_mpi
 use sparse
 use parsolver
-!use parsolver_petsc
+use parsolver_petsc
 #else
 use serial_library
 use math_library_serial
 use sparse_serial
 use solver
-!use solver_petsc
+use solver_petsc
 #endif
 use bc
 use free_surface
@@ -144,6 +144,10 @@ real(kind=kreal),allocatable :: nodalB(:,:)
 !jac: Jacobian
 integer,allocatable :: egdof(:),egdofu(:)
 ! placeholder array. holds values of gdof_elmt for a given element.
+
+! frequency
+logical :: isscale_freq2=.true.
+real(kind=kreal) :: freq,ang_freq,scale_ang_freq2
 
 logical :: isgravity,ispseudoeq ! gravity load and pseudostatic load
 
@@ -593,27 +597,27 @@ u=ZERO
 !call sync_process
 !call control_error(errcode,errtag,stdout,myrank)
 
-!if(solver_type.eq.petsc_solver)then
-  ! prepare sparsity of the stiffness matrix
-!  call prepare_sparse()
+if(solver_type.eq.petsc_solver)then
+ ! prepare sparsity of the stiffness matrix
+  call prepare_sparse()
 
-  ! petsc solver
-!  call petsc_initialize()
-!  if(myrank==0)then
-!    write(logunit,'(a)')'petsc_initialize: SUCCESS!'
-!    flush(logunit)
-!  endif
-  ! create sparse vector, matrix, and preallocate                                                         
-  ! TODO: following call is not necessary for RECYCLE                            
-!  call petsc_create_vector()                                                     
-!  call petsc_matrix_preallocate_size()                                           
-!  call petsc_create_matrix()                                                     
-!  call petsc_create_solver()                                                     
-!  if(myrank==0)then
-!    write(logunit,'(a)')'petsc_preallocate_matrix_size: SUCCESS!'
-!    flush(logunit)
-!  endif
-!endif
+ ! petsc solver
+  call petsc_initialize()
+  if(myrank==0)then
+    write(logunit,'(a)')'petsc_initialize: SUCCESS!'
+    flush(logunit)
+  endif
+ ! create sparse vector, matrix, and preallocate                                                         
+ ! TODO: following call is not necessary for RECYCLE                            
+  call petsc_create_vector()                                                     
+  call petsc_matrix_preallocate_size()                                           
+  call petsc_create_matrix()                                                     
+  call petsc_create_solver()                                                     
+  if(myrank==0)then
+    write(logunit,'(a)')'petsc_preallocate_matrix_size: SUCCESS!'
+    flush(logunit)
+  endif
+endif
 
 ! WARNING: TODO
 ! slip gdof for split PC
@@ -658,7 +662,23 @@ endif
 if(trim(devel_example).eq.'axial_rod')then
   open(77,file=trim(file_head)//"_strain.dat",action="write",status="replace")
 endif
-time_step: do i_tstep=1,ntstep
+
+! angular frequency
+if(steptype.eq.FREQSTEP)then
+  if(myrank.eq.0)then
+    print*,'timestepping: FREQUENCY'
+    print*,'f0, f1, df (Hz):',step0,step1,dstep
+  endif
+  freq=step
+  if(NONDIM)then
+    ang_freq=TWO*freq*DIM_T
+  else
+    ang_freq=TWO*PI*freq
+  endif
+  scale_ang_freq2=ONE/(ang_freq*ang_freq)
+endif
+
+loop_step: do i_tstep=1,ntstep
   t=dt*real(i_tstep,kreal)
   nodalu=ZERO
   if(ISPOT_DOF)then
@@ -680,14 +700,14 @@ time_step: do i_tstep=1,ntstep
     !  symmetric_solver=.false.
     !  call control_error(errcode,errtag,stdout,myrank)
     !endif
-  !  if(solver_type.eq.petsc_solver)then
-  !    call petsc_set_stiffness_matrix(storekmat)
-  !    if(myrank==0)then
-  !      write(logunit,'(a)')' petsc_set_stiffness_matrix: SUCCESS!'
-  !      flush(logunit)
-  !    endif
-  !    call petsc_set_ksp_operator(reuse_pc=.false.)
-  !  endif
+    if(solver_type.eq.petsc_solver)then
+      call petsc_set_stiffness_matrix(storekmat)
+      if(myrank==0)then
+        write(logunit,'(a)')' petsc_set_stiffness_matrix: SUCCESS!'
+        flush(logunit)
+      endif
+      call petsc_set_ksp_operator(reuse_pc=.false.)
+    endif
   elseif(i_tstep==2)then
     ! Since we use a uniform dt, following routine has to be called only once 
     ! for a linear viscoelastic model. For nonlinear or nonuniform time steps
@@ -695,14 +715,14 @@ time_step: do i_tstep=1,ntstep
     ! This will simply overwrite the storekmat for viscoelastic elements.
     call compute_stiffness_viscoelastic(nelmt_viscoelas,eid_viscoelas,         &
          dt,relaxtime,storekmat,errcode,errtag)
-   ! if(solver_type.eq.petsc_solver)then
-   !   call petsc_set_stiffness_matrix(storekmat)
-   !   if(myrank==0)then
-   !     write(logunit,'(a)')' petsc_set_stiffness_matrix: SUCCESS!'
-   !     flush(logunit)
-   !   endif
-   !   call petsc_set_ksp_operator(reuse_pc=.true.)
-   ! endif
+    if(solver_type.eq.petsc_solver)then
+      call petsc_set_stiffness_matrix(storekmat)
+      if(myrank==0)then
+        write(logunit,'(a)')' petsc_set_stiffness_matrix: SUCCESS!'
+        flush(logunit)
+      endif
+      call petsc_set_ksp_operator(reuse_pc=.true.)
+    endif
   endif
 
   ! apply traction boundary conditions
@@ -918,18 +938,18 @@ time_step: do i_tstep=1,ntstep
       !petsc solver
       !call petsc_set_stiffness_matrix(storekmat)
       !if(myrank==0)print*,'petsc_set_stiffness_matrix: SUCCESS!'
-   !   call petsc_set_vector(resload)
-    !  if(myrank==0)then
-    !    write(logunit,'(a)')' petsc_set_vector: SUCCESS!'
-    !    flush(logunit)
-    !  endif
+      call petsc_set_vector(resload)
+      if(myrank==0)then
+        write(logunit,'(a)')' petsc_set_vector: SUCCESS!'
+        flush(logunit)
+      endif
       !call petsc_set_ksp_operator()
 
-    !  call petsc_solve(du(1:),ksp_iter,ksp_convreason)
-    !  if(myrank==0)then
-    !    write(logunit,'(a)')' petsc_solve: SUCCESS!'
-    !    flush(logunit)
-    !  endif
+      call petsc_solve(du(1:),ksp_iter,ksp_convreason)
+      if(myrank==0)then
+        write(logunit,'(a)')' petsc_solve: SUCCESS!'
+        flush(logunit)
+      endif
      continue
     endif
     call cpu_time(cpu_tend)
@@ -948,9 +968,9 @@ time_step: do i_tstep=1,ntstep
     if(myrank==0)then
       write(logunit,'(a,i0,1x,a,g0.6)')' KSP iters: ',ksp_iter, &
       'max du: ',maxdu
-   !   if(solver_type.eq.petsc_solver)then
-   !     write(logunit,'(a,i0)')' convergence reason: ',ksp_convreason
-   !   endif
+      if(solver_type.eq.petsc_solver)then
+        write(logunit,'(a,i0)')' convergence reason: ',ksp_convreason
+      endif
       flush(logunit)
     endif
     u=u+du
@@ -1265,7 +1285,7 @@ time_step: do i_tstep=1,ntstep
       endif
       
       if(ntstep.le.1.and.NL_MAXITER.le.1)then
-        exit time_step 
+        exit loop_step 
       endif
     endif ! i_tstep==1.and.i_nliter==NL_MAXITER
     ! Exit nonlinear loop if converged
@@ -1449,18 +1469,18 @@ time_step: do i_tstep=1,ntstep
     write(logunit,*)' ' 
     flush(logunit)
   endif
-enddo time_step ! i_tstep time stepping loop
+enddo loop_step ! i_tstep time stepping loop
 if(savedata%strain)then
   close(77)
   deallocate(strain_elmt,strain_nodal)
 endif
 ! cleanup solver
-!if(solver_type.eq.petsc_solver)then
-!  call petsc_destroy_vector()                                                      
-!  call petsc_destroy_matrix()                                                      
-!  call petsc_destroy_solver()                                                      
-!  call petsc_finalize()
-!endif
+if(solver_type.eq.petsc_solver)then
+  call petsc_destroy_vector()                                                      
+  call petsc_destroy_matrix()                                                      
+  call petsc_destroy_solver()                                                      
+  call petsc_finalize()
+endif
 
 call cleanup_fault()
 deallocate(egdof,egdofu)

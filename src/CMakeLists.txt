@@ -100,6 +100,10 @@ IF(ISPARALLEL)
   #SET_PROPERTY(SOURCE ${srcgeotech} PROPERTY INCLUDE_DIRECTORIES ${MPI_Fortran_INCLUDE_PATH})
 ENDIF(ISPARALLEL)
 ADD_LIBRARY(geotech ${srcgeotech})
+# following PETSC link is necessary due to the PETSC module called in the
+# specfem3d.F90
+TARGET_INCLUDE_DIRECTORIES(geotech PUBLIC "${PETSC_DIR}/include" "${PETSC_ARCH}/include")
+TARGET_LINK_LIBRARIES(geotech ${PETSC_ARCH}/lib/libpetsc.so)
 IF(ISPARALLEL)
   ADD_DEPENDENCIES(geotech sem parsem both)
 ELSE(ISPARALLEL)
