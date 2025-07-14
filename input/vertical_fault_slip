@@ -1,0 +1,9 @@
+# slip information file
+fault_center  = 0.0 0.0 -7000.0 
+fault_strike  = 1.0 0.0 0.0
+fault_normal  = 0.0 -1.0 0.0
+fault_slip    = 5.0 0.0 0.0
+fault_length  = 20000.0
+fault_width   = 10000.0
+npatch_length = 20.0
+npatch_width  = 10.0
