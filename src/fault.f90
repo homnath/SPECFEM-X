@@ -192,7 +192,7 @@ integer :: i,i_edge,i_face,i_gll,j
 integer :: ielmt,iface,iedge(4)
 integer :: nfgll
 integer :: n1,n2
-integer :: funit,nface_small,nsnode,nsnode_all
+integer :: iounit,nface_small,nsnode,nsnode_all
 integer :: node_quad4(4)
 integer,allocatable :: f_num(:,:),inode_order(:),nodelist(:)
 real(kind=kreal),allocatable :: f_coord(:,:),f_slip(:,:),slip_face(:,:,:)
@@ -203,8 +203,8 @@ logical,allocatable :: isnode(:)
 ! WARNING: it works only for NGLLX=NGLLY=NGLLZ!!!
 nfgll=maxngll2d
 
-funit=101
-open(funit,file=trim(vtkout),action='write',status='replace')
+iounit=101
+open(iounit,file=trim(vtkout),action='write',status='replace')
 ! allocate for nodelist and order
 nsnode_all=maxngll2d*nface
 allocate(nodelist(nsnode_all),inode_order(nsnode_all))
@@ -282,17 +282,17 @@ enddo
 deallocate(inode_order,isnode,nodelist)
 
 ! write VTK file
-write(funit,'(a)')'# vtk DataFile Version 2.0'
-write(funit,'(a)')'Unstructured Grid Example'
-write(funit,'(a)')'ASCII'
-write(funit,'(a)')'DATASET UNSTRUCTURED_GRID'
-write(funit,'(a,i5,a)')'POINTS',nsnode,' float'
+write(iounit,'(a)')'# vtk DataFile Version 2.0'
+write(iounit,'(a)')'Unstructured Grid Example'
+write(iounit,'(a)')'ASCII'
+write(iounit,'(a)')'DATASET UNSTRUCTURED_GRID'
+write(iounit,'(a,i5,a)')'POINTS',nsnode,' float'
 do i=1,nsnode
-  write(funit,'(3(f14.6,1x))')DIM_L*f_coord(:,i)
+  write(iounit,'(3(f14.6,1x))')DIM_L*f_coord(:,i)
 enddo
-write(funit,*)
+write(iounit,*)
 nface_small=nface*(ngllx-1)*(nglly-1) ! ngllx = nglly
-write(funit,'(a,i5,a,i5)')'CELLS',nface_small,' ',5*nface_small
+write(iounit,'(a,i5,a,i5)')'CELLS',nface_small,' ',5*nface_small
 do i_face=1,nface
   do j=1,nglly-1
     do i=1,ngllx-1
@@ -303,22 +303,22 @@ do i_face=1,nface
       node_quad4(3)=node_quad4(4)+1     ! G3 is located 1 of G4
 
       ! VTK format indexing starts from 0
-      write(funit,'(5(i5,1x))')4,f_num(node_quad4,i_face)-1
+      write(iounit,'(5(i5,1x))')4,f_num(node_quad4,i_face)-1
     enddo
   enddo
 enddo
-write(funit,*)
-write(funit,'(a,i5)')'CELL_TYPES',nface_small
+write(iounit,*)
+write(iounit,'(a,i5)')'CELL_TYPES',nface_small
 do i=1,nface_small
-  write(funit,'(i1)')9
+  write(iounit,'(i1)')9
 enddo
-write(funit,*)
-write(funit,'(a,1x,i5)')'POINT_DATA',nsnode
-write(funit,'(a)')'VECTORS slip float'
+write(iounit,*)
+write(iounit,'(a,1x,i5)')'POINT_DATA',nsnode
+write(iounit,'(a)')'VECTORS slip float'
 do i=1,nsnode
-  write(funit,'(3(e13.6,1x))')DIM_L*f_slip(:,i)
+  write(iounit,'(3(e13.6,1x))')DIM_L*f_slip(:,i)
 enddo
-close(funit)
+close(iounit)
 deallocate(f_coord,f_num,f_slip)
 
 close(101)

@@ -80,7 +80,7 @@ OBJ = $(BIN)/global.o            \
       $(BIN)/integration.o       \
       $(BIN)/infinite_element.o  \
       $(BIN)/utmgeo.o            \
-      $(BIN)/visual.o            \
+      $(BIN)/write_ensight.o            \
       $(BIN)/fault.o             \
       $(BIN)/weakform.o          \
       $(BIN)/prepare_gravity.o   \
@@ -365,8 +365,8 @@ $(BIN)/plastic_library.o: plastic_library.f90
 $(BIN)/okada_solution.o: okada_solution.f90
 	$(FC_COMPILE) -c -o $(BIN)/okada_solution.o okada_solution.f90
 
-$(BIN)/visual.o: visual.f90
-	$(FC_COMPILE) -c -o $(BIN)/visual.o visual.f90
+$(BIN)/write_ensight.o: write_ensight.f90
+	$(FC_COMPILE) -c -o $(BIN)/write_ensight.o write_ensight.f90
 
 $(BIN)/postprocess.o: postprocess.f90
 	$(FC_COMPILE) -c -o $(BIN)/postprocess.o postprocess.f90

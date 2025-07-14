@@ -81,7 +81,7 @@ end subroutine cleanup_model
 subroutine write_model_cell(errcode,errtag)
 use math_constants,only:INFTOL,FOUR_THIRD,HALF,ONE,TWO,ZERO
 use global
-use visual,only:ensight_hex8, &
+use write_ensight,only:ensight_hex8, &
                 write_ensight_perelementSCALAS, &
                 write_ensight_perelementSCALAS_part1, &
                 write_ensight_perelementVECAS, &
@@ -188,7 +188,7 @@ subroutine set_model_properties(errcode,errtag)
 use math_constants,only:INFTOL,FOUR_THIRD,HALF,ONE,TWO,ZERO
 use global
 use shape_library,only:shape_function_hex8p
-use visual,only:write_ensight_pernodeSCALAS,write_ensight_pernodeSCALAS_part1
+use write_ensight,only:write_ensight_pernodeSCALAS,write_ensight_pernodeSCALAS_part1
 #if (USE_MPI)
 use ghost_library_mpi
 #else

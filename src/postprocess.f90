@@ -370,7 +370,7 @@ end subroutine compute_premagnetic_field
 subroutine write_scalar_to_file(nnode,datav,ext,stag,istep)
 use global,only:infbc,nst,out_path,file_head,ptail, &
 tstep_sformat,nnode_finite,node_finite,nnode_infinite,node_infinite,savedata
-use visual
+use write_ensight
 implicit none
 integer,intent(in) :: nnode
 real(kind=kreal),intent(in) :: datav(:)
@@ -461,7 +461,7 @@ end subroutine write_scalar_to_file
 subroutine write_scalar_to_file_freesurf(nnode,datav,ext,stag,istep,plane)
 use global,only:infbc,nst,out_path,file_head,ptail, &
 tstep_sformat,nnode_finite,node_finite,nnode_infinite,node_infinite,savedata
-use visual
+use write_ensight
 implicit none
 integer,intent(in) :: nnode
 real(kind=kreal),intent(in) :: datav(:)
@@ -537,7 +537,7 @@ end subroutine write_scalar_to_file_freesurf
 subroutine write_vector_to_file(nnode,datav,ext,stag,istep)
 use global,only:infbc,nst,out_path,file_head,benchmark_okada,ptail, &
 tstep_sformat,nnode_finite,node_finite,nnode_infinite,node_infinite,savedata
-use visual
+use write_ensight
 implicit none
 integer,intent(in) :: nnode
 real(kind=kreal),intent(in) :: datav(:,:)
@@ -635,7 +635,7 @@ end subroutine write_vector_to_file
 subroutine write_vector_to_file_freesurf(nnode,datav,ext,stag,istep,plane)
 use global,only:infbc,nst,out_path,file_head,benchmark_okada,ptail, &
 tstep_sformat,nnode_finite,node_finite,nnode_infinite,node_infinite,savedata
-use visual
+use write_ensight
 implicit none
 integer,intent(in) :: nnode
 real(kind=kreal),intent(in) :: datav(:,:)
@@ -723,7 +723,7 @@ end subroutine write_vector_to_file_freesurf
 !tstep_sformat,nnode_finite,node_finite
 !use dimensionless,only:DIM_L,DIM_GPOT,DIM_G,DIM_MOD
 !use math_constants
-!use visual
+!use write_ensight
 !implicit none
 !integer,intent(in) :: istep,nnode
 !real(kind=kreal),intent(in) :: nodalu(:,:),nodalu_okada(:,:),          &

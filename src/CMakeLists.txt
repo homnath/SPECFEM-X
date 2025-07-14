@@ -4,6 +4,7 @@
 # Source files for sem library
 SET(srcsem
   global.f90
+  package_version.f90
   string_library.f90
   math_library.f90
   shape_library.f90
@@ -18,7 +19,7 @@ SET(srcsem
   integration.f90
   infinite_element.f90
   utmgeo.f90
-  visual.f90
+  write_ensight.f90
   fault.f90
   weakform.f90
   prepare_gravity.f90
@@ -73,7 +74,7 @@ SET(srcboth
 #ADD_DEFINITIONS(CMAKE_Fortran_FLAGS "-DUSE_MPI")
 IF(ISPARALLEL)
   SET_PROPERTY(SOURCE ${srcboth} PROPERTY COMPILE_DEFINITIONS USE_MPI)
-  #SET_PROPERTY(SOURCE ${srcgeotech} PROPERTY INCLUDE_DIRECTORIES ${MPI_Fortran_INCLUDE_PATH})
+  #SET_PROPERTY(SOURCE ${srcboth} PROPERTY INCLUDE_DIRECTORIES ${MPI_Fortran_INCLUDE_PATH})
 ENDIF(ISPARALLEL)
 ADD_LIBRARY(both ${srcboth})
 IF(ISPARALLEL)

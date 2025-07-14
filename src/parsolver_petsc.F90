@@ -820,6 +820,125 @@ call VecDestroy(vdiag,ierr)
 end subroutine petsc_set_stiffness_matrix
 !===============================================================================
 
+subroutine petsc_set_stiffness_matrix_freq(storekmat,storemmat,freq,           &
+scale_freq2,isscale_freq2)
+use math_library_mpi,only:sumscal
+use ieee_arithmetic
+implicit none
+
+real(kind=kreal),intent(in) :: storekmat(:,:,:),storemmat(:,:)
+integer :: i,i_elmt,ielmt,j,n,ndzero                                             
+integer :: ggdof_elmt(NEDOF)                                   
+
+PetscReal         freq,scale_freq2 ! angular frequency                           
+PetscBool         isscale_freq2
+                                                                                 
+PetscInt irow,jcol                                                               
+Vec   vdiag                                                                      
+PetscScalar rval  
+PetscReal  kmat(NEDOF,NEDOF),mdiag(NEDOFU)
+PetscScalar,pointer :: diag_array(:)                                             
+                                                                                 
+real(kind=8) :: xval
+
+! Set and assemble matrix.
+!  - Note that MatSetValues() uses 0-based row and column numbers
+!  in Fortran as well as in C (as set here in the array "col").
+
+call MatZeroEntries(Amat,ierr)
+CHKERRA(ierr)
+call sync_process
+rval=1.0
+
+! entirely in solid                                                              
+do i_elmt=1,nelmt                                                                
+  ielmt=i_elmt                           
+
+  kmat=storekmat(:,:,ielmt)                                                      
+  if(steptype.eq.FREQSTEP)then                                                   
+    mdiag=storemmat(:,i_elmt)                                                    
+    if(isscale_freq2)then                                                        
+      kmat=scale_freq2*kmat                                                      
+    else                                                                         
+      mdiag=freq*freq*mdiag                                                      
+    endif                                                                        
+    ! mass matrix has NEDOFU elements NOT NEDOF                                  
+    do i=1,NEDOFU                                                                
+      kmat(i,i)=kmat(i,i)-mdiag(i)                                               
+    enddo                                                                        
+  endif                                                                          
+
+  ggdof_elmt=reshape(ggdof(:,g_num(:,ielmt)),(/NEDOF/))                          
+  ggdof_elmt=ggdof_elmt-1 ! petsc index starts from 0                            
+  do i=1,NEDOF                                                                   
+    do j=1,NEDOF                                                                 
+    irow=i; jcol=j                                                               
+    if(ggdof_elmt(irow).ge.0.and.ggdof_elmt(jcol).ge.0)then                      
+    !.and.storekmat_intact_ic(i,j,i_elmt).ne.0.0_kreal)then                      
+      !xval=storekmat(i,j,ielmt)                                                  
+      xval=kmat(i,j)                                                  
+      if(ieee_is_nan(xval).or. .not.ieee_is_finite(xval))then                    
+        write(logunit,*)'ERROR: stiffness matrix has nonfinite value/s!',myrank,ielmt,&
+        mat_id(ielmt),xval,minval(abs(kmat)),maxval(abs(kmat))         
+        flush(logunit)
+        stop                                                                     
+      endif                                                                     
+      call MatSetValues(Amat,1,ggdof_elmt(irow),1,ggdof_elmt(jcol),           &  
+      storekmat(i,j,ielmt),ADD_VALUES,ierr)                                      
+      CHKERRA(ierr)                                                              
+    endif                                                                        
+    enddo                                                                        
+  enddo                                                                          
+enddo    
+
+call MatAssemblyBegin(Amat,MAT_FINAL_ASSEMBLY,ierr)
+CHKERRA(ierr)
+call MatAssemblyEnd(Amat,MAT_FINAL_ASSEMBLY,ierr)
+CHKERRA(ierr)
+
+if(symmetric_solver)then
+  call MatSetOption(Amat,MAT_SYMMETRIC,PETSC_TRUE,ierr)                            
+  CHKERRA(ierr)  
+else
+  call MatSetOption(Amat,MAT_SYMMETRIC,PETSC_FALSE,ierr)                            
+  CHKERRA(ierr)  
+endif
+
+!! check symmetry                                                                
+!call MatDuplicate(Amat,MAT_DO_NOT_COPY_VALUES,AmatT,ierr)                        
+!CHKERRA(ierr)                                                                   
+!call MatTranspose(Amat,MAT_INITIAL_MATRIX,AmatT,ierr)                            
+!CHKERRA(ierr)                                                                   
+!rval=-1.0                                                                       
+!call MatAXPY(AmatT,rval,Amat,SAME_NONZERO_PATTERN,ierr)                          
+!call MatNorm(Amat,NORM_FROBENIUS,mnorm,ierr)                                    
+!if(myrank==0)print*,'Matrix norm:',mnorm                                        
+!call MatNorm(AmatT,NORM_FROBENIUS,mnorm,ierr)                                    
+!if(myrank==0)print*,'Symmetry norm:',mnorm                                      
+!call MatDestroy(AmatT,ierr)                                                      
+!if(myrank==0)print*,'matrix setting & assembly complete11!'                     
+!call sync_process                                                               
+                                                                                 
+!call MatCreateVecs(Amat,vdiag,PETSC_NULL_OBJECT,ierr) <3.8.0 version            
+call MatCreateVecs(Amat,vdiag,PETSC_NULL_VEC,ierr)                               
+call MatGetDiagonal(Amat,vdiag,ierr)                                             
+call VecGetLocalSize(vdiag,n,ierr)                                               
+CHKERRA(ierr)                                                                    
+call VecGetArrayF90(vdiag,diag_array,ierr)                                       
+CHKERRA(ierr)                                                                    
+ndzero=count(diag_array==0.)                                                     
+if(ndzero.gt.0)then                                                              
+  write(logunit,*)'WARNING: NZEROs in diagonal:',myrank,n, &
+  count(diag_array==0.),minval(abs(diag_array)),maxval(abs(diag_array))                                
+  flush(logunit)
+endif                                                                            
+call VecRestoreArrayF90(vdiag,diag_array,ierr)                                   
+call sync_process                                                                
+call VecDestroy(vdiag,ierr)
+                                                      
+end subroutine petsc_set_stiffness_matrix_freq
+!===============================================================================
+
 subroutine petsc_set_vector(rload)
 use ieee_arithmetic
 implicit none

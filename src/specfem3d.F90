@@ -1,3 +1,4 @@
+!===============================specfem3d.F90===================================
 ! include 'license.txt'
 ! REVISION:
 !   HNG, Aug 25,2011; HNG, Jul 14,2011; HNG, Jul 11,2011; Apr 09,2010
@@ -43,7 +44,7 @@ use solver_petsc
 use bc
 use free_surface
 use benchmark
-use visual
+use write_ensight
 use postprocess
 implicit none
 
@@ -56,7 +57,7 @@ integer :: i,j
 integer :: istat
 
 !do-loop indices
-integer :: i_elmt,i_nliter,i_node,i_tstep,i_comp
+integer :: i_elmt,i_nliter,i_node,i_comp
 integer :: ielmt,imat,idof,iedof!element ID for gdof, node, etc.
 
 real(kind=kreal),dimension(nst),parameter :: unit_voigt=(/one,one,one,ZERO,    &
@@ -100,6 +101,8 @@ jac(:,:)
 !km: stiffness matrix for each element
 !storekmat: stiffness matrix for all elements
 real(kind=kreal),allocatable :: kmat(:,:),storekmat(:,:,:)
+!storemmat: mass matrix for all elements
+real(kind=kreal),allocatable :: storemmat(:)
 
 !uerr: used to check convergence
 !umax: max of displacement magnitude, uxmax: max of displacement components
@@ -159,8 +162,13 @@ integer :: tot_nelmt_elas,max_nelmt_elas,min_nelmt_elas
 integer :: tot_nelmt_viscoelas,max_nelmt_viscoelas,min_nelmt_viscoelas
 integer :: nmatblk_elas
 real(kind=kreal) :: min_relaxtime,max_relaxtime
+
 ! time at current time step
 real(kind=kreal) :: t
+integer :: i_step,istep
+integer :: istep0 !first step
+real(kind=kreal) :: step !current step (t or f)
+
 !factor for time unit conversion
 real(kind=kreal) :: tunitfac
 real(kind=kreal) :: cpu_tstart,cpu_tend,telap,max_telap,mean_telap
@@ -555,7 +563,7 @@ if(myrank==0)then
   write(logunit,'(i0,1x,g0.6,1x,i0,1x,g0.6)')KSP_MAXITER,KSP_RTOL,NL_MAXITER,NL_TOL
   !write(logunit,'(a)')'Number of SRFs'
   !write(logunit,'(i0)')nsrf
-  write(logunit,'(a,i0)')'Number of time steps:',ntstep
+  write(logunit,'(a,i0)')'Number of time steps:',nstep
   !write(logunit,'(a)')'STEP, CGITER, NLITER, UXMAX, UMAX'
   flush(logunit)
 endif
@@ -564,7 +572,7 @@ allocate(cohf(nmatblk),nuf(nmatblk),phif(nmatblk),psif(nmatblk),ymf(nmatblk))
 
 allocate(load(0:neq),bodyload(0:neq),viscoload(0:neq),             &
 resload(0:neq),du(0:neq),u(0:neq),kmat(nedof,nedof),            &
-storekmat(nedof,nedof,nelmt),stat=istat)
+storekmat(nedof,nedof,nelmt),storemmat(nnode),stat=istat)
 if(istat/=0)then
   write(logunit,*)'ERROR: cannot allocate memory!'
   flush(logunit)
@@ -574,7 +582,7 @@ endif
 allocate(ngpart_node(nnode))
 
 ! compute stable time step for implicit integration
-dt=dtstep
+dt=dstep
 
 nl_tot=0
 
@@ -663,23 +671,38 @@ if(trim(devel_example).eq.'axial_rod')then
   open(77,file=trim(file_head)//"_strain.dat",action="write",status="replace")
 endif
 
+! Note that the stepping starts from 
+!   1 for time domain
+!   0 for frequency domain
+istep0=1
+if(steptype.eq.FREQSTEP)then
+  istep0=0
+endif
+
 ! angular frequency
 if(steptype.eq.FREQSTEP)then
   if(myrank.eq.0)then
     print*,'timestepping: FREQUENCY'
     print*,'f0, f1, df (Hz):',step0,step1,dstep
   endif
-  freq=step
-  if(NONDIM)then
-    ang_freq=TWO*freq*DIM_T
-  else
-    ang_freq=TWO*PI*freq
-  endif
-  scale_ang_freq2=ONE/(ang_freq*ang_freq)
 endif
 
-loop_step: do i_tstep=1,ntstep
-  t=dt*real(i_tstep,kreal)
+loop_step: do i_step=istep0,nstep
+  !t=dt*real(i_step,kreal)
+  step=step0+dstep*real(i_step,kreal)
+  if(steptype.eq.TIMESTEP)then
+    t=step
+    dt=dstep
+  elseif(steptype.eq.FREQSTEP)then
+    freq=step
+    if(devel_nondim)then
+      ang_freq=TWO*freq*DIM_T
+    else
+      ang_freq=TWO*PI*freq
+    endif
+    scale_ang_freq2=ONE/(ang_freq*ang_freq)
+  endif
+
   nodalu=ZERO
   if(ISPOT_DOF)then
     nodalphi=ZERO
@@ -688,11 +711,11 @@ loop_step: do i_tstep=1,ntstep
   !extload=ZERO
   rhoload=ZERO
   if(myrank==0)then
-    write(logunit,'(a,i0,a,g0.6)')'step: ',i_tstep,' t: ',t
+    write(logunit,'(a,i0,a,g0.6)')'step: ',i_step,' t: ',t
     flush(logunit)
   endif
 
-  if(i_tstep==1)then
+  if(i_step==1)then
     ! compute elastic stiffness matrix for time = 0
     call compute_stiffness_elastic(storekmat,rhoload,errcode,errtag)
     !if(istraction.and.trcase.eq.TRACTION_INTERNAL)then
@@ -708,7 +731,7 @@ loop_step: do i_tstep=1,ntstep
       endif
       call petsc_set_ksp_operator(reuse_pc=.false.)
     endif
-  elseif(i_tstep==2)then
+  elseif(i_step==2)then
     ! Since we use a uniform dt, following routine has to be called only once 
     ! for a linear viscoelastic model. For nonlinear or nonuniform time steps
     ! it has to be called for every time steps or every changing time step.
@@ -726,8 +749,8 @@ loop_step: do i_tstep=1,ntstep
   endif
 
   ! apply traction boundary conditions
-  ! WARNING: i_tstep==1 is ONLY for rod example
-  if((istraction.or.isfstraction).and.i_tstep==1)then
+  ! WARNING: i_step==1 is ONLY for rod example
+  if((istraction.or.isfstraction).and.i_step==1)then
     if(myrank==0)then
       write(logunit,'(a)',advance='no')'applying traction...'
       flush(logunit)
@@ -740,7 +763,7 @@ loop_step: do i_tstep=1,ntstep
     endif
   endif
   if(trim(devel_example).eq.'axial_rod')then
-    if(i_tstep>600)extload=ZERO 
+    if(i_step>600)extload=ZERO 
   endif
   ! apply magnetic traction
   if(ismtraction)then
@@ -759,7 +782,7 @@ loop_step: do i_tstep=1,ntstep
   ! compute load contributed by the earthquake slip
   ! split-node apparoch: prescribe the slip on the fault explicitly
   if(iseqsource.and.eqsource_type.eq.3)then
-    if(i_tstep==1)then
+    if(i_step==1)then
       if(myrank==0)then
         write(logunit,'(a)')'Earthquake source type: slip with split node'
         write(logunit,'(a,1x,i2)')'Slip taper option: ',itaper_slip
@@ -789,7 +812,7 @@ loop_step: do i_tstep=1,ntstep
   endif
   ! moment-density tensor apparoch: compute equivalent moment-density tensor
   ! from the prescribe slip on the fault
-  if(iseqsource.and.eqsource_type.lt.3.and.i_tstep==1)then
+  if(iseqsource.and.eqsource_type.lt.3.and.i_step==1)then
     if(myrank==0)then
       write(logunit,'(a)')'Earthquake source type: moment-density tensor'
       flush(logunit)
@@ -1079,14 +1102,14 @@ loop_step: do i_tstep=1,ntstep
         
           call compute_bmat_stress(deriv,bmat)
           estrain=matmul(bmat,eld) ! strain at current time step
-          if(savedata%strain.and.i_tstep==1.and.i_nliter==1)then
+          if(savedata%strain.and.i_step==1.and.i_nliter==1)then
             ! store elastic strain
             strain_elmt(:,i,ielmt)=estrain
           endif
           trace_strain=estrain(1)+estrain(2)+estrain(3)
           dev_strain(1:3)=(estrain(1:3)-ONE_THIRD*trace_strain)
           dev_strain(4:6)=estrain(4:6)*HALF
-          if(savedata%stress.and.i_tstep==1.and.i_nliter==1)then
+          if(savedata%stress.and.i_step==1.and.i_nliter==1)then
             ! store elastic stress
             esigma=TWO*G*dev_strain
             esigma(1:3)=esigma(1:3)+K*trace_strain
@@ -1099,7 +1122,7 @@ loop_step: do i_tstep=1,ntstep
           !----------------------------ZIENCKIEWICZ---------------------------
           e0=elas_e0(:,i,i_elmt)
           q0=visco_q0(:,:,i,i_elmt)
-          if(i_tstep==1)then !.and.i_nliter==1)then
+          if(i_step==1)then !.and.i_nliter==1)then
             ! initialize
             e0=dev_strain
             do i_maxwell=1,nmaxwell                                                
@@ -1134,7 +1157,7 @@ loop_step: do i_tstep=1,ntstep
 
     ! time step 0  and i_nliter 0 is entirely elastic
     ! write data for tiem step 0
-    if(i_tstep==1.and.i_nliter==1)then
+    if(i_step==1.and.i_nliter==1)then
       if(ISDISP_DOF)then
         ! write displacement field
         if(savedata%disp)then
@@ -1284,10 +1307,10 @@ loop_step: do i_tstep=1,ntstep
         endif
       endif
       
-      if(ntstep.le.1.and.NL_MAXITER.le.1)then
+      if(nstep.le.1.and.NL_MAXITER.le.1)then
         exit loop_step 
       endif
-    endif ! i_tstep==1.and.i_nliter==NL_MAXITER
+    endif ! i_step==1.and.i_nliter==NL_MAXITER
     ! Exit nonlinear loop if converged
     if(nl_isconv)exit nonlinear
   enddo nonlinear ! i_nliter=1,NL_MAXITER
@@ -1308,7 +1331,7 @@ loop_step: do i_tstep=1,ntstep
   !    do i_comp=1,NST
   !      strain_nodal(i_comp,:)=strain_nodal(i_comp,:)/real(node_valency,kreal)
   !    enddo
-  !    write(77,*)dt*real(i_tstep),strain_nodal(1,2099)                               
+  !    write(77,*)dt*real(i_step),strain_nodal(1,2099)                               
   !    flush(77)
   !  endif
   !endif
@@ -1326,15 +1349,15 @@ loop_step: do i_tstep=1,ntstep
   if(ISDISP_DOF)then
     ! plot displacement
     if(savedata%disp)then
-      call write_vector_to_file(nnode,DIM_L*nodalu,ext='dis',istep=i_tstep) 
+      call write_vector_to_file(nnode,DIM_L*nodalu,ext='dis',istep=i_step) 
       ! On the free surface
       if(savedata%fsplot)then
         call write_vector_to_file_freesurf(nnode_fs,DIM_L*nodalu(:,gnode_fs),&
-        ext='dis',istep=i_tstep)
+        ext='dis',istep=i_step)
       endif
       if(savedata%fsplot_plane)then
         call write_vector_to_file_freesurf(nnode_fs,DIM_L*nodalu(:,gnode_fs),&
-        ext='dis',istep=i_tstep,plane=.true.)
+        ext='dis',istep=i_step,plane=.true.)
       endif
     endif
     ! plot stress
@@ -1348,15 +1371,15 @@ loop_step: do i_tstep=1,ntstep
         stress_nodal(i_comp,:)=stress_nodal(i_comp,:)/real(node_valency,kreal)
       enddo
       call write_vector_to_file(nnode,DIM_MOD*stress_nodal,&
-      ext='sig',istep=i_tstep)
+      ext='sig',istep=i_step)
       ! On the free surface
       if(savedata%fsplot)then
         call write_vector_to_file_freesurf(nnode_fs,DIM_MOD*stress_nodal(:,gnode_fs),&
-        ext='sig',istep=i_tstep)
+        ext='sig',istep=i_step)
       endif
       if(savedata%fsplot_plane)then
         call write_vector_to_file_freesurf(nnode_fs,DIM_MOD*stress_nodal(:,gnode_fs),&
-        ext='sig',istep=i_tstep,plane=.true.)
+        ext='sig',istep=i_step,plane=.true.)
       endif
     endif
     ! plot strain
@@ -1370,15 +1393,15 @@ loop_step: do i_tstep=1,ntstep
         strain_nodal(i_comp,:)=strain_nodal(i_comp,:)/real(node_valency,kreal)
       enddo
       call write_vector_to_file(nnode,strain_nodal,&
-      ext='eps',istep=i_tstep)
+      ext='eps',istep=i_step)
       ! On the free surface
       if(savedata%fsplot)then
         call write_vector_to_file_freesurf(nnode_fs,strain_nodal(:,gnode_fs),&
-        ext='eps',istep=i_tstep)
+        ext='eps',istep=i_step)
       endif
       if(savedata%fsplot_plane)then
         call write_vector_to_file_freesurf(nnode_fs,strain_nodal(:,gnode_fs),&
-        ext='eps',istep=i_tstep,plane=.true.)
+        ext='eps',istep=i_step,plane=.true.)
       endif
     endif
     !if(devel_mgll)then
@@ -1388,27 +1411,27 @@ loop_step: do i_tstep=1,ntstep
   if(ISPOT_DOF)then
     ! plot gravity potential
     if(savedata%gpot)then
-      call write_scalar_to_file(nnode,DIM_GPOT*nodalphi,ext='gpot',istep=i_tstep) 
+      call write_scalar_to_file(nnode,DIM_GPOT*nodalphi,ext='gpot',istep=i_step) 
       ! On the free surface
       if(savedata%fsplot)then
         call write_scalar_to_file_freesurf(nnode_fs,DIM_GPOT*nodalphi(gnode_fs), &
-        ext='gpot',istep=i_tstep) 
+        ext='gpot',istep=i_step) 
       endif
       if(savedata%fsplot_plane)then
         call write_scalar_to_file_freesurf(nnode_fs,DIM_GPOT*nodalphi(gnode_fs), &
-        ext='gpot',istep=i_tstep,plane=.true.) 
+        ext='gpot',istep=i_step,plane=.true.) 
       endif
     endif
     if(savedata%mpot)then
-      call write_scalar_to_file(nnode,DIM_MPOT*nodalphi,ext='mpot',istep=i_tstep) 
+      call write_scalar_to_file(nnode,DIM_MPOT*nodalphi,ext='mpot',istep=i_step) 
       ! On the free surface
       if(savedata%fsplot)then
         call write_scalar_to_file_freesurf(nnode_fs,DIM_MPOT*nodalphi(gnode_fs), &
-        ext='mpot',istep=i_tstep) 
+        ext='mpot',istep=i_step) 
       endif
       if(savedata%fsplot_plane)then
         call write_scalar_to_file_freesurf(nnode_fs,DIM_MPOT*nodalphi(gnode_fs), &
-        ext='mpot',istep=i_tstep,plane=.true.) 
+        ext='mpot',istep=i_step,plane=.true.) 
       endif
     endif
     
@@ -1425,15 +1448,15 @@ loop_step: do i_tstep=1,ntstep
       enddo
       ! plot gravity accelration
       if(savedata%agrav)then
-        call write_vector_to_file(nnode,DIM_G*nodalg,ext='grav',istep=i_tstep)
+        call write_vector_to_file(nnode,DIM_G*nodalg,ext='grav',istep=i_step)
         ! On the free surface
         if(savedata%fsplot)then
           call write_vector_to_file_freesurf(nnode_fs,DIM_G*nodalg(:,gnode_fs), &
-          ext='grav',istep=i_tstep)
+          ext='grav',istep=i_step)
         endif
         if(savedata%fsplot_plane)then
           call write_vector_to_file_freesurf(nnode_fs,DIM_G*nodalg(:,gnode_fs), &
-          ext='grav',istep=i_tstep,plane=.true.)
+          ext='grav',istep=i_step,plane=.true.)
         endif
       endif
     endif
@@ -1452,15 +1475,15 @@ loop_step: do i_tstep=1,ntstep
       nodalB=MAG_CONS*nodalB
       ! plot magnetic field
       if(savedata%magb)then
-        call write_vector_to_file(nnode,DIM_B*nodalB,ext='magb',istep=i_tstep)
+        call write_vector_to_file(nnode,DIM_B*nodalB,ext='magb',istep=i_step)
         ! On the free surface
         if(savedata%fsplot)then
           call write_vector_to_file_freesurf(nnode_fs,DIM_B*nodalB(:,gnode_fs), &
-          ext='magb',istep=i_tstep)
+          ext='magb',istep=i_step)
         endif
         if(savedata%fsplot_plane)then
           call write_vector_to_file_freesurf(nnode_fs,DIM_B*nodalB(:,gnode_fs), &
-          ext='magb',istep=i_tstep,plane=.true.)
+          ext='magb',istep=i_step,plane=.true.)
         endif
       endif
     endif
@@ -1469,7 +1492,7 @@ loop_step: do i_tstep=1,ntstep
     write(logunit,*)' ' 
     flush(logunit)
   endif
-enddo loop_step ! i_tstep time stepping loop
+enddo loop_step ! i_step time stepping loop
 if(savedata%strain)then
   close(77)
   deallocate(strain_elmt,strain_nodal)

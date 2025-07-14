@@ -205,13 +205,13 @@ steptype=0 ! time
 nstep=0
 step0=ZERO
 step1=ZERO
+dstep=zero ! time/frequency step interval
 
 nexcav=0
 nsrf=1 ! number of strength reduction factors
 ninc=1 ! number of load increments
-ntstep=1 ! number of time steps
-dtstep=zero ! time step interval
 tunit='sec'
+funit='hz'
 isdxval=.false.
 isdyval=.false.
 isdzval=.false.
@@ -773,22 +773,35 @@ do
     cycle
   endif
 
-  ! read stepping information                                                    
-  if (trim(token)=='step:')then                                                  
-    if(step_stat==1)then                                                         
-      write(errtag,*)'ERROR: copy of line type step: not permitted!'             
-      return                                                                     
-    endif                                                                        
-    call split_string(tag,',',args,narg)                                         
-    steptype=get_integer('type',args,narg)                                       
-    step0=get_real('start',args,narg)                                            
-    step1=get_real('end',args,narg)                                              
-    dstep=get_real('step',args,narg)                                             
-    !---------------------------                                                 
+  ! read stepping information
+  if (trim(token)=='step:')then
+    if(step_stat==1)then
+      write(errtag,*)'ERROR: copy of line type step: not permitted!'
+      return
+    endif
+    call split_string(tag,',',args,narg)
+    steptype=get_integer('type',args,narg)
+    ! time/frequency step variables dt/df
+    dstep=get_real('step',args,narg)
+    if(steptype.eq.FREQSTEP)then
+      step0=get_real('start',args,narg)
+      step1=get_real('end',args,narg)
+      call seek_string('funit',strval,args,narg)
+      if (.not. isblank(strval))funit=trim(strval)
+      nstep=1+(step1-step0)/dstep
+    elseif(steptype.eq.TIMESTEP)then
+      nstep=get_integer('nstep',args,narg)
+      call seek_string('tunit',strval,args,narg)
+      if (.not. isblank(strval))tunit=trim(strval)
+    else
+      write(errtag,'(a,i0)')'ERROR: unknown step type: ',steptype
+      return
+    endif
+    !---------------------------
                                                                                  
-    step_stat=1                                                                  
-    cycle                                                                        
-  endif      
+    step_stat=1
+    cycle
+  endif
 
   ! read control information
   if (trim(token)=='control:')then
@@ -805,13 +818,6 @@ do
     if(istat==0)nl_tol=rval
     call seek_integer('nl_maxiter',ival,args,narg,istat)
     if(istat==0)nl_maxiter=ival
-    ! time step variables
-    call seek_real('dt',rval,args,narg,istat)
-    if(istat==0)dtstep=rval
-    call seek_string('tunit',strval,args,narg)
-    if (.not. isblank(strval))tunit=trim(strval)
-    call seek_integer('ntstep',ival,args,narg,istat)
-    if(istat==0)ntstep=ival
     ! strength reduction variables
     call seek_integer('nsrf',ival,args,narg,istat)
     if(istat==0)nsrf=ival

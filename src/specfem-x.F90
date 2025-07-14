@@ -29,10 +29,10 @@ use serial_library
 use math_library_serial
 #endif
 use postprocess,only:write_scalar_to_file_freesurf
-use visual
+use write_ensight
 
 implicit none
-integer :: funit,funit_inf,funit_fs,i,ios,j,k
+integer :: iounit,iounit_inf,iounit_fs,i,ios,j,k
 integer :: i_elmt
 
 integer :: gnum_hex8(8),node_hex8(8)
@@ -278,7 +278,7 @@ fs=0; fi=1
 !  isgeo_change=.true.
 !endif
 ! nt for ensight file format must be > 0
-ns=max(1,ntstep)
+ns=max(1,nstep)
 twidth=ceiling(log10(real(ns)+1.))
 
 ! write original meshes
@@ -704,21 +704,21 @@ endif
 if(infbc)then
   ! write .geo file 
   call write_ensight_geocoord_part1(geo_file,ipart,spart,1, &
-  nnode_finite,node_finite,nnode,real(g_coord),funit)
+  nnode_finite,node_finite,nnode,real(g_coord),iounit)
   if(savedata%infinite)then
     call write_ensight_geocoord_part1(infgeo_file,ipart,spart,2, &
-    nnode_infinite,node_infinite,nnode,real(g_coord),funit_inf)
+    nnode_infinite,node_infinite,nnode,real(g_coord),iounit_inf)
   endif
 else
-  call write_ensight_geocoord(geo_file,ipart,spart,nnode,real(g_coord),funit)
+  call write_ensight_geocoord(geo_file,ipart,spart,nnode,real(g_coord),iounit)
 endif
 
 ! Dimensionalize coordinates after they are written.
 ! Writes element information.
 buffer=ensight_hex8
 if(infbc)then
-  write(funit)buffer
-  write(funit)nelmt_finite*(ngllx-1)*(nglly-1)*(ngllz-1)
+  write(iounit)buffer
+  write(iounit)nelmt_finite*(ngllx-1)*(nglly-1)*(ngllz-1)
 
   ! do not substract 1 for ensight file
   do i_elmt=1,nelmt_finite
@@ -739,18 +739,18 @@ if(infbc)then
           node_hex8(8)=node_hex8(7)+1
           ! map to exodus/cubit numbering and write
           gnum_hex8=g_num_finite(node_hex8(map2exodus_hex8),i_elmt)
-          write(funit)gnum_hex8
+          write(iounit)gnum_hex8
         enddo
       enddo
     enddo
   enddo
-  close(funit)
+  close(iounit)
   ! deallocate variables
   deallocate(g_num_finite)!,g_num_infinite,node_finite,node_infinite)
   ! infinite region
   if(savedata%infinite)then
-    write(funit_inf)buffer
-    write(funit_inf)nelmt_infinite*(ngllx-1)*(nglly-1)*(ngllz-1)
+    write(iounit_inf)buffer
+    write(iounit_inf)nelmt_infinite*(ngllx-1)*(nglly-1)*(ngllz-1)
 
     ! do not substract 1 for ensight file
     do i_elmt=1,nelmt_infinite
@@ -771,19 +771,19 @@ if(infbc)then
             node_hex8(8)=node_hex8(7)+1
             ! map to exodus/cubit numbering and write
             gnum_hex8=g_num_infinite(node_hex8(map2exodus_hex8),i_elmt)
-            write(funit_inf)gnum_hex8
+            write(iounit_inf)gnum_hex8
           enddo
         enddo
       enddo
     enddo
-    close(funit_inf)
+    close(iounit_inf)
     ! deallocate variables
     deallocate(g_num_infinite)!,g_num_infinite,node_finite,node_infinite)
 
   endif
 else
-  write(funit)buffer
-  write(funit)nelmt*(ngllx-1)*(nglly-1)*(ngllz-1)
+  write(iounit)buffer
+  write(iounit)nelmt*(ngllx-1)*(nglly-1)*(ngllz-1)
 
   ! do not substract 1 for ensight file
   do i_elmt=1,nelmt
@@ -804,12 +804,12 @@ else
           node_hex8(8)=node_hex8(7)+1
           ! map to exodus/cubit numbering and write
           gnum_hex8=g_num(node_hex8(map2exodus_hex8),i_elmt)
-          write(funit)gnum_hex8
+          write(iounit)gnum_hex8
         enddo
       enddo
     enddo
   enddo
-  close(funit)
+  close(iounit)
 endif
 
 ! Write GEO file for the free surface
@@ -823,14 +823,14 @@ if(savedata%fsplot)then
   spart_fs(1)='free_surface'
   ! write .geo file 
   call write_ensight_geocoord_part1(fsgeo_file,ipart,spart_fs,1, &
-  nnode_fs,gnode_fs,nnode,real(g_coord),funit_fs)
+  nnode_fs,gnode_fs,nnode,real(g_coord),iounit_fs)
 
   ! Writes element information.
   buffer=ensight_quad4
-  write(funit_fs)buffer
+  write(iounit_fs)buffer
   ! WARNING: statement/segment below assumes that ngllx=nglly=ngllz.
   ! It must be modified for unequal GLL points along different axes.
-  write(funit_fs)nelmt_fs*(ngllx-1)*(nglly-1)
+  write(iounit_fs)nelmt_fs*(ngllx-1)*(nglly-1)
 
   ! Do not substract 1 for ensight file
   do i_elmt=1,nelmt_fs
@@ -845,11 +845,11 @@ if(savedata%fsplot)then
 
           ! Map to exodus/cubit numbering and write
           gnum_quad4=rgnum_fs(node_quad4(map2exodus_quad4),i_elmt)
-          write(funit_fs)gnum_quad4
+          write(iounit_fs)gnum_quad4
         enddo
       enddo
     enddo
-  close(funit_fs)
+  close(iounit_fs)
 endif
 
 if(savedata%fsplot_plane)then
@@ -862,14 +862,14 @@ if(savedata%fsplot_plane)then
   spart_fs(1)='free_surface'
   ! write .geo file 
   call write_ensight_geocoord_plane_part1(fspgeo_file,ipart,spart_fs,1,3, &
-  nnode_fs,gnode_fs,nnode,real(g_coord),funit_fs)
+  nnode_fs,gnode_fs,nnode,real(g_coord),iounit_fs)
 
   ! Writes element information.
   buffer=ensight_quad4
-  write(funit_fs)buffer
+  write(iounit_fs)buffer
   ! WARNING: statement/segment below assumes that ngllx=nglly=ngllz.
   ! It must be modified for unequal GLL points along different axes.
-  write(funit_fs)nelmt_fs*(ngllx-1)*(nglly-1)
+  write(iounit_fs)nelmt_fs*(ngllx-1)*(nglly-1)
 
   ! Do not substract 1 for ensight file
   do i_elmt=1,nelmt_fs
@@ -884,11 +884,11 @@ if(savedata%fsplot_plane)then
 
           ! Map to exodus/cubit numbering and write
           gnum_quad4=rgnum_fs(node_quad4(map2exodus_quad4),i_elmt)
-          write(funit_fs)gnum_quad4
+          write(iounit_fs)gnum_quad4
         enddo
       enddo
     enddo
-  close(funit_fs)
+  close(iounit_fs)
 
   ! Write Z-coordinate file
   call write_scalar_to_file_freesurf(nnode_fs,g_coord(3,gnode_fs),ext='z', &

@@ -5,7 +5,7 @@
 ! TODO:
 !  define the array in main program such that entire array can be written
 !  without transpose in this routine (done!)
-module visual
+module write_ensight
 use global,only:NDIM
 implicit none
 character(len=20), parameter :: wild_char='********************'
@@ -14,7 +14,7 @@ character(len=20) :: ensight_hex8='hexa8'
 character(len=20) :: ensight_quad4='quad4'
 
 ! private
-character(len=250),private :: myfname=' => visual.f90'
+character(len=250),private :: myfname=' => write_ensight.f90'
 character(len=500),private :: errsrc
 
 contains
@@ -69,7 +69,7 @@ end subroutine write_ensight_casefile
 
 subroutine write_ensight_casefile_long(case_file,geo_file,add_tag,isgeo_change,&
 ts,ns,fs,fi,twidth,errcode,errtag,freesurf,isplane)
-use global,only:file_head,ptail,savedata,benchmark_okada,dtstep
+use global,only:file_head,ptail,savedata,benchmark_okada,dstep
 implicit none
 character(len=250),intent(in) :: case_file,geo_file
 character(len=60),intent(in) :: add_tag 
@@ -200,7 +200,7 @@ write(11,'(a)',advance='no')'time values: '
 !  enddo
 !else
   do i=0,ns-1
-    write(11,'(es12.5)',advance='yes')real(i)*dtstep
+    write(11,'(es12.5)',advance='yes')real(i)*dstep
   enddo
 !endif
 close(11)
@@ -210,14 +210,14 @@ end subroutine write_ensight_casefile_long
 ! This subroutine writes an ensight geofile only upto coordinates and returns
 ! the file unit to the calling program so that the calling program can writes
 ! the remaining part (connectivity) of the geo file and close it.
-subroutine write_ensight_geocoord(out_fname,ipart,spart,nnode,coord,funit)
+subroutine write_ensight_geocoord(out_fname,ipart,spart,nnode,coord,iounit)
 implicit none
 character(len=250),intent(in) :: out_fname
 integer,intent(in) :: ipart(:)
 character(len=80),intent(in) :: spart(:)
 integer,intent(in) :: nnode
 real,dimension(:,:),intent(in) :: coord !3D
-integer,intent(out) :: funit
+integer,intent(out) :: iounit
 
 character(len=80) :: buffer ! this must be 80 characters long
 character(len=250) :: myname
@@ -230,8 +230,8 @@ if(ubound(coord,1).ne.3 .or. ubound(coord,2).ne.nnode)then
   stop
 endif
 
-funit=11
-open(unit=funit,file=trim(out_fname),access='stream',form='unformatted',       &
+iounit=11
+open(unit=iounit,file=trim(out_fname),access='stream',form='unformatted',       &
 status='replace',action='write',iostat=ios)
 if (ios /= 0)then
   write(*,'(a)')'ERROR: output file "'//out_fname//'" cannot be opened!'
@@ -239,25 +239,25 @@ if (ios /= 0)then
 endif
 
 buffer='C Binary'
-write(funit)buffer
+write(iounit)buffer
 buffer='Created by write_ensight Routine'
-write(funit)buffer
+write(iounit)buffer
 buffer='semfem3d'
-write(funit)buffer
+write(iounit)buffer
 buffer='node id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='element id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='part'
-write(funit)buffer
-write(funit)ipart(1)
+write(iounit)buffer
+write(iounit)ipart(1)
 buffer=spart(1)
-write(funit)buffer
+write(iounit)buffer
 buffer='coordinates'
-write(funit)buffer
-write(funit)nnode
-write(funit)transpose(coord)
-! do not close funit here
+write(iounit)buffer
+write(iounit)nnode
+write(iounit)transpose(coord)
+! do not close iounit here
 return
 end subroutine write_ensight_geocoord
 !===============================================================================
@@ -332,7 +332,7 @@ end subroutine write_ensight_geo
 ! information in multi-blocks (parts). This subroutine write only a particular
 ! block/part defined by the parameters. 
 subroutine write_ensight_geocoord_part1(out_fname,ipart,spart,pindex, &
-nnode1,node1,nnode,coord,funit)
+nnode1,node1,nnode,coord,iounit)
 implicit none
 character(len=250),intent(in) :: out_fname
 integer,intent(in) :: ipart(:)
@@ -342,7 +342,7 @@ integer,intent(in) :: nnode1
 integer,intent(in) :: node1(:)
 integer,intent(in) :: nnode
 real,dimension(:,:),intent(in) :: coord !3D
-integer,intent(out) :: funit
+integer,intent(out) :: iounit
 
 character(len=80) :: buffer ! this must be 80 characters long
 character(len=250) :: myname
@@ -355,7 +355,7 @@ if(ubound(coord,1).ne.3 .or. ubound(coord,2).ne.nnode)then
   stop
 endif
 
-open(newunit=funit,file=trim(out_fname),access='stream',form='unformatted',          &
+open(newunit=iounit,file=trim(out_fname),access='stream',form='unformatted',          &
 status='replace',action='write',iostat=ios)
 if (ios /= 0)then
   write(*,'(a)')'ERROR: output file "'//out_fname//'" cannot be opened!'
@@ -363,27 +363,27 @@ if (ios /= 0)then
 endif
 
 buffer='C Binary'
-write(funit)buffer
+write(iounit)buffer
 buffer='Created by write_ensight Routine'
-write(funit)buffer
+write(iounit)buffer
 buffer='semfem3d'
-write(funit)buffer
+write(iounit)buffer
 buffer='node id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='element id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='part'
-write(funit)buffer
-write(funit)ipart(pindex)
+write(iounit)buffer
+write(iounit)ipart(pindex)
 buffer=spart(pindex)
-write(funit)buffer
+write(iounit)buffer
 buffer='coordinates'
-write(funit)buffer
-write(funit)nnode1
+write(iounit)buffer
+write(iounit)nnode1
 if(nnode1.gt.0)then
-  write(funit)transpose(coord(:,node1))
+  write(iounit)transpose(coord(:,node1))
 endif
-! do not close funit here
+! do not close iounit here
 return
 end subroutine write_ensight_geocoord_part1
 !===============================================================================
@@ -392,7 +392,7 @@ end subroutine write_ensight_geocoord_part1
 ! information in multi-blocks (parts). This subroutine write only a particular
 ! block/part defined by the parameters. 
 subroutine write_ensight_geocoord_plane_part1(out_fname,ipart,spart,pindex, &
-iplane,nnode1,node1,nnode,coord,funit)
+iplane,nnode1,node1,nnode,coord,iounit)
 implicit none
 character(len=250),intent(in) :: out_fname
 integer,intent(in) :: ipart(:)
@@ -403,7 +403,7 @@ integer,intent(in) :: nnode1
 integer,intent(in) :: node1(:)
 integer,intent(in) :: nnode
 real,dimension(:,:),intent(in) :: coord !3D
-integer,intent(out) :: funit
+integer,intent(out) :: iounit
 
 real,parameter :: RZERO=0.0
 real,dimension(:,:),allocatable :: pcoord !3D
@@ -418,7 +418,7 @@ if(ubound(coord,1).ne.3 .or. ubound(coord,2).ne.nnode)then
   stop
 endif
 
-open(newunit=funit,file=trim(out_fname),access='stream',form='unformatted',          &
+open(newunit=iounit,file=trim(out_fname),access='stream',form='unformatted',          &
 status='replace',action='write',iostat=ios)
 if (ios /= 0)then
   write(*,'(a)')'ERROR: output file "'//out_fname//'" cannot be opened!'
@@ -426,33 +426,33 @@ if (ios /= 0)then
 endif
 
 buffer='C Binary'
-write(funit)buffer
+write(iounit)buffer
 buffer='Created by write_ensight Routine'
-write(funit)buffer
+write(iounit)buffer
 buffer='semfem3d'
-write(funit)buffer
+write(iounit)buffer
 buffer='node id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='element id off'
-write(funit)buffer
+write(iounit)buffer
 buffer='part'
-write(funit)buffer
-write(funit)ipart(pindex)
+write(iounit)buffer
+write(iounit)ipart(pindex)
 buffer=spart(pindex)
-write(funit)buffer
+write(iounit)buffer
 buffer='coordinates'
-write(funit)buffer
-write(funit)nnode1
+write(iounit)buffer
+write(iounit)nnode1
 if(nnode1.gt.0)then
   allocate(pcoord(3,nnode1))
   pcoord=coord(:,node1)
   ! Set the coordinate for the iplane to ZERO
   pcoord(iplane,:)=RZERO
   ! Write coordinates
-  write(funit)transpose(pcoord)
+  write(iounit)transpose(pcoord)
   deallocate(pcoord)
 endif
-! do not close funit here
+! do not close iounit here
 return
 end subroutine write_ensight_geocoord_plane_part1
 !===============================================================================
@@ -1051,5 +1051,5 @@ return
 end subroutine write_ensight_perelementVECAS_part1
 !===============================================================================
 
-end module visual
+end module write_ensight
 !===============================================================================

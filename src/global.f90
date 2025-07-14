@@ -340,10 +340,11 @@ real(kind=kreal) :: step0,step1,dstep
 ! Control parameters
 integer :: nl_maxiter
 real(kind=kreal) :: nl_tol
-integer :: nexcav,ninc,nsrf,ntstep
-real(kind=kreal) :: dtstep
+integer :: nexcav,ninc,nsrf
 ! time unit: 'second', 'minute', 'hour', 'day', 'month', 'year'
 character(len=10) :: tunit
+! frequency unit: 'Hz', 'mHz'
+character(len=10) :: funit
 
 ! Excavation ID (regions), number
 ! of excavation IDs (regions) in each stage
